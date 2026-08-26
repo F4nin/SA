@@ -1,0 +1,67 @@
+@startuml
+actor "Пользователь" as user
+participant "Front" as front
+participant "brand-service" as brand
+participant "item-service" as item
+database "База данных брендов" as db
+autonumber
+
+== Просмотр списка брендов ==
+activate user
+user -> front: Пользователь получает список
+activate front
+front -> brand: Отправляется запрос на поиск\nGET\napi/v1/brands
+activate brand
+brand -> db: Выполняется поиск всех брендов
+activate db
+db --> brand: Передача всех брендов
+deactivate db
+brand --> front: 200 OK. Получение списка брендов
+deactivate brand
+front --> user: Отображает список брендов
+deactivate front
+
+
+
+== Сортировка списка брендов ==
+
+user -> front: Пользователь \nсортирует бренды в алфавитном порядке
+activate front
+front -> brand: GET\nОтправляется запрос на сортировку
+activate brand
+brand ->  db: Запрос на сортировку брендов по алфавиту
+activate db
+db --> brand: Передача списка брендов в сортированном виде
+deactivate db
+brand --> front: 200 OK. Получение списка брендов в сортированном виде
+deactivate brand
+front --> user: Отображение списка брендов в сортированном виде
+deactivate front
+
+== Поиск по названию ==
+
+user -> front: Пользователь вводит название бренда
+activate front
+front -> brand: GET /api/v1/brands?name={name}
+activate brand
+brand -> db: Выполняется поиск брендов по name
+activate db
+
+alt Бренды не найдены
+    db --> brand: Бренды не найдены
+    deactivate db
+    brand --> front: 200 OK Бренды не найдены
+    deactivate brand
+    front --> user: Отображение уведомления "Бренды не найдены"
+else Бренды найдены
+    db --> brand: Передача списка брендов, подходящих по названию
+    deactivate db
+    brand --> front: 200 OK со списком брендов
+    deactivate brand
+    front --> user: Отображение списка брендов
+end
+
+deactivate front
+
+
+@enduml

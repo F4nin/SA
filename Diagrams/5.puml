@@ -1,0 +1,48 @@
+@startuml
+
+box "Внешняя система" #Yellow
+participant "order-source" as source
+end box
+
+queue "kafka.order-processor.orders.batch" as batch_topic
+
+box "Сервис обработки заказов" #LightGreen
+participant "order-processor" as processor
+queue "kafka.order-processor.orders.invalid" as invalid_topic
+database "База обработанных заказов" as processed_db
+end box
+
+box "Уведомления" #LightBlue
+participant "notification-service" as notification
+end box
+autonumber
+note over processor
+    Заказ считается валидным, если заполнены:
+    - адрес доставки
+    - контактный телефон
+end note
+
+source ->> batch_topic: Отправить пакет заказов
+
+loop Пока есть пакеты заказов
+    batch_topic -->> processor: Прочитать пакет заказов
+    activate processor
+
+    loop Обработка каждого заказа в пакете
+        ref over processor: Диаграмма "Валидация заказа"
+        alt Заказ невалиден
+            processor ->> invalid_topic: Отправить заказ в очередь невалидных
+        else Заказ валиден
+            processor -> processed_db: Сохранить валидный заказ
+            activate processed_db
+            processed_db --> processor: Подтверждение записи
+            deactivate processed_db
+        end
+    end
+
+processor ->> notification: Отправить уведомление об обработке пакета
+deactivate processor
+end
+
+
+@enduml

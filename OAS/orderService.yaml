@@ -1,0 +1,461 @@
+openapi: 3.0.3
+info:
+  title: API платформы заказов
+  description: Спецификация платформы заказов с поддержкой авторизации через OAuth2
+  version: 1.0.0
+  contact:
+    name: Поддержка API
+    url: 'https://www.example.com/support'
+    email: orders@example.com
+  license:
+    name: Apache 2.0
+    url: 'https://opensource.org/licenses/LICENSE-2.0.html'
+servers:
+  - url: 'https://api.example.com/v1'
+    description: Продакшен
+  - url: 'https://api-stg.example.com/v1'
+    description: Стейджинг
+
+tags:
+  - name: Customer methods
+    description: Операции покупателя. Просмотр своих заказов и создание заказа
+  - name: Admin methods
+    description: Операции администратора. Просмотр всех заказов, изменение статуса и отмена
+
+paths:
+  /orders:
+    get:
+      summary: Получить список заказов
+      description: >
+        Возвращает постраничный список заказов.
+        Для покупателя — только его заказы, идентичность определяется из токена.
+        Для администратора — заказы всех покупателей либо конкретного покупателя через параметр customerId.
+      operationId: getListOrders
+      security:
+        - OAuth2Auth:
+            - orders:read
+      tags:
+        - Customer methods
+        - Admin methods
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          description: Максимальное количество заказов в ответе
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          required: false
+          description: Смещение от начала списка
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: status
+          in: query
+          required: false
+          description: Фильтр по статусу заказа
+          schema:
+            $ref: '#/components/schemas/OrderStatus'
+        - name: customerId
+          in: query
+          required: false
+          description: >
+            Фильтр по покупателю. Доступен только администратору.
+            Если покупатель передаст этот параметр, сервер вернёт 403 Forbidden.
+          schema:
+            type: string
+            pattern: '^cst_[0-9]+$'
+            example: "cst_42"
+      responses:
+        '200':
+          description: Список заказов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseOrderList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Создать заказ
+      description: >
+        Создаёт новый заказ. Идентификатор покупателя берётся из токена.
+        Статус, общая сумма и дата создания присваиваются сервером.
+        Повторный запрос с тем же Idempotency-Key возвращает исходный заказ с кодом 409.
+      operationId: createOrder
+      security:
+        - OAuth2Auth:
+            - orders:create
+      tags:
+        - Customer methods
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: Уникальный ключ идемпотентности для предотвращения дубликатов
+          schema:
+            type: string
+            format: uuid
+            example: "b8e2f1a0-4d3f-4e7b-9a2c-5f6d7e8a9b0c"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestCreateOrder'
+      responses:
+        '201':
+          description: Заказ создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseOrder'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: Повторный запрос с тем же Idempotency-Key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseOrder'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /orders/{orderId}:
+    get:
+      summary: Получить заказ по идентификатору
+      description: >
+        Возвращает один заказ. Покупатель может получить только свой заказ,
+        иначе сервер вернёт 403 Forbidden.
+      operationId: getOrderById
+      security:
+        - OAuth2Auth:
+            - orders:read
+      tags:
+        - Customer methods
+        - Admin methods
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          description: Идентификатор заказа
+          schema:
+            type: string
+            pattern: '^ord_[0-9]+$'
+            example: "ord_1001"
+      responses:
+        '200':
+          description: Заказ найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseOrder'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    patch:
+      summary: Изменить статус заказа
+      description: >
+        Доступно только администратору. Изменяет статус заказа.
+        Недопустимый переход статуса возвращает 409 Conflict.
+      operationId: updateOrderStatus
+      security:
+        - OAuth2Auth:
+            - orders:write
+      tags:
+        - Admin methods
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          description: Идентификатор заказа
+          schema:
+            type: string
+            pattern: '^ord_[0-9]+$'
+            example: "ord_1001"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestUpdateOrderStatus'
+      responses:
+        '200':
+          description: Статус заказа обновлён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseOrder'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /orders/{orderId}/cancel:
+    post:
+      summary: Отменить заказ
+      description: >
+        Доступно только администратору. Переводит заказ в статус cancelled.
+        Если отмена невозможна, возвращает 409 Conflict.
+      operationId: cancelOrder
+      security:
+        - OAuth2Auth:
+            - orders:write
+      tags:
+        - Admin methods
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          description: Идентификатор заказа
+          schema:
+            type: string
+            pattern: '^ord_[0-9]+$'
+            example: "ord_1001"
+      responses:
+        '200':
+          description: Заказ отменён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResponseOrder'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  schemas:
+    OrderStatus:
+      type: string
+      enum: ['created', 'paid', 'shipped', 'delivered', 'cancelled']
+
+    RequestOrderItem:
+      type: object
+      properties:
+        productId:
+          type: string
+          description: Идентификатор товара
+          pattern: '^prd_[0-9]+$'
+          example: "prd_101"
+        quantity:
+          type: integer
+          format: int32
+          minimum: 1
+          example: 2
+        unitPrice:
+          type: number
+          format: double
+          minimum: 0
+          example: 25.50
+      required:
+        - productId
+        - quantity
+        - unitPrice
+
+    ResponseOrderItem:
+      type: object
+      properties:
+        productId:
+          type: string
+          description: Идентификатор товара
+          pattern: '^prd_[0-9]+$'
+          example: "prd_101"
+        quantity:
+          type: integer
+          format: int32
+          minimum: 1
+          example: 2
+        unitPrice:
+          type: number
+          format: double
+          minimum: 0
+          example: 25.50
+      required:
+        - productId
+        - quantity
+        - unitPrice
+
+    RequestCreateOrder:
+      type: object
+      properties:
+        items:
+          type: array
+          description: Позиции заказа
+          items:
+            $ref: '#/components/schemas/RequestOrderItem'
+      required:
+        - items
+
+    RequestUpdateOrderStatus:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+      required:
+        - status
+
+    ResponseOrder:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Идентификатор заказа
+          readOnly: true
+          pattern: '^ord_[0-9]+$'
+          example: "ord_1001"
+        customerId:
+          type: string
+          description: Идентификатор покупателя
+          pattern: '^cst_[0-9]+$'
+          example: "cst_42"
+        items:
+          type: array
+          description: Позиции заказа
+          items:
+            $ref: '#/components/schemas/ResponseOrderItem'
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        totalPrice:
+          type: number
+          format: double
+          description: Итоговая сумма заказа
+          readOnly: true
+          minimum: 0
+          example: 51.00
+        createdAt:
+          type: string
+          format: date-time
+          description: Дата и время создания заказа в формате ISO8601 UTC
+          readOnly: true
+          example: "2026-08-23T20:20:00Z"
+      required:
+        - id
+        - customerId
+        - items
+        - status
+        - totalPrice
+        - createdAt
+
+    ResponseOrderList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResponseOrder'
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+      required:
+        - items
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 400
+        message:
+          type: string
+          example: Описание ошибки
+      required:
+        - code
+        - message
+
+  responses:
+    BadRequest:
+      description: Некорректный запрос
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Не авторизован
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: Доступ запрещён
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Ресурс не найден
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Conflict:
+      description: Конфликт состояния или дубликат запроса
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InternalServerError:
+      description: Внутренняя ошибка сервера
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  securitySchemes:
+    OAuth2Auth:
+      type: oauth2
+      description: >
+        Аутентификация через OAuth2. Роли определяются scope:
+        orders:read — просмотр заказов;
+        orders:create — создание заказа (доступно покупателю);
+        orders:write — изменение статуса и отмена заказа (доступно администратору).
+      flows:
+        authorizationCode:
+          authorizationUrl: https://example.com/oauth/authorize
+          tokenUrl: https://example.com/oauth/token
+          scopes:
+            orders:read: Просмотр списка заказов и отдельного заказа
+            orders:create: Создание заказа
+            orders:write: Изменение статуса и отмена заказа

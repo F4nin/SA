@@ -1,0 +1,87 @@
+//Идентификатор заказа;
+//Идентификатор клиента;
+//Дату создания;
+//Дату последнего обновления;
+//Товары в заказе;
+//Адрес доставки.
+
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "orderId": {
+      "type": "number",
+      "description": "Идентификатор заказа",
+      "minimum": 0
+    },
+    "clientId": {
+      "type": "number",
+      "description": "Идентификатор клиента",
+      "minimum": 0
+    },
+    "createAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Дата создания"
+    },
+    "updateAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Дата последнего обновления"
+    },
+    "itemsOnOrder": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 250,
+      "items": {
+        "type": "object",
+        "properties": {
+          "productId" : {
+            "type": "number",
+            "minimum": 0,
+            "description": "Индентификатор товара"
+          },
+          "quantity": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Количество товара"
+          },
+          "productName": {
+            "type": "string",
+            "description": "Название товара",
+            "minLength": 1,
+            "maxLength": 255
+          }
+        },
+        "required": ["productId", "productName", "quantity"]
+      }
+    },
+    "address": {
+      "type": "object",
+      "description": "Адрес доставки",
+      "properties": {
+        "street": {
+          "type": "string",
+          "description": "Улица",
+          "minLength": 1,
+          "maxLength": 255
+        },
+        "city": {
+          "type": "string",
+          "description": "Город",
+          "minLength": 1,
+          "maxLength": 255
+        }
+      },
+      "required": ["street", "city"]
+    }
+  },
+  "required":[
+    "orderId",
+    "itemsOnOrder",
+    "clientId",
+    "updateAt",
+    "createAt",
+    "address"
+  ]
+}

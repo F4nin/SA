@@ -1,0 +1,58 @@
+'Пользователь на фронтенде оформляет заказ. Frontend отправляет синхронный запрос в checkout-service на создание заказа. checkout-service сохраняет заказ в базу данных и получает его id. Затем checkout-service отправляет асинхронное событие о создании заказа в Kafka-топик kafka.order-service.order.create. После этого checkout-service возвращает фронтенду ответ «Заказ создан», и пользователь видит подтверждение.
+'
+'Позже order-service (потребитель) читает событие из этого топика и начинает обработку заказа (сборку, доставку). Этот этап не блокирует фронтенд — он происходит асинхронно.
+
+@startuml
+actor "Пользователь" as user
+participant "Front" as front
+participant "checkout-service" as checkout
+database "База заказов" as db
+queue "kafka.order-service.order.create" as order_topic
+queue "kafka.order-service.order.create.dlq" as dlq_topic
+participant "order-service" as order_service
+database "База заказов доставки" as delivery_db
+
+autonumber
+user -> front: Пользователь оформляет заказ
+activate front
+
+front -> checkout:POST \n/api/v1/checkout-service/orders/create
+activate checkout
+
+checkout -> db: Сохранить заказ
+activate db
+db --> checkout: id созданного заказа
+deactivate db
+
+checkout ->> order_topic: Записать событие о создании заказа
+activate order_topic
+
+checkout --> front: 202 Accepted\nЗаказ принят
+deactivate checkout
+
+front --> user: Заказ принят в работу
+deactivate front
+
+== Асинхронная обработка заказа ==
+
+order_topic -->> order_service: Прочитать событие о создании заказа
+deactivate order_topic
+
+activate order_service
+
+break Не удалось обработать событие
+    order_service ->> dlq_topic: Записать событие в Dead Letter Queue
+    order_service -> delivery_db: Обновить статус заказа на "ошибка"
+    activate delivery_db
+    delivery_db --> order_service: Подтверждение
+    deactivate delivery_db
+end
+
+order_service -> delivery_db: Создать запись о заказе
+activate delivery_db
+delivery_db --> order_service: Подтверждение записи
+deactivate delivery_db
+deactivate order_service
+
+@enduml
+

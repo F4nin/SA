@@ -1,0 +1,95 @@
+scalar ISO8601DateTime
+
+type Project {
+  id: ID!
+  name: String!
+  description: String
+  createdAt: ISO8601DateTime!
+  deletedAt: ISO8601DateTime
+  tasks: [Task!]!
+}
+
+enum TaskStatus {
+  BACKLOG
+  TODO
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
+
+type Task {
+  id: ID!
+  project: Project!
+  title: String!
+  description: String
+  status: TaskStatus!
+  dueDate: ISO8601DateTime
+  createdAt: ISO8601DateTime!
+  updatedAt: ISO8601DateTime
+}
+
+type TaskEdge {
+  node: Task!
+  cursor: String!
+}
+
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}
+
+type TaskConnection {
+  edges: [TaskEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type Query {
+  getProjectById(id: ID!, includeDeleted: Boolean = false): Project
+  getAllProjects(includeDeleted: Boolean = false): [Project!]!
+  getTasksByStatus(projectId: ID!, status: TaskStatus!): [Task!]!
+  getProjectTasks(projectId: ID!, first: Int, after: String): TaskConnection!
+}
+
+input CreateProjectInput {
+  idempotenceKey: ID!
+  name: String!
+  description: String
+}
+
+input CreateTaskInput {
+  idempotenceKey: ID!
+  projectId: ID!
+  title: String!
+  description: String
+  status: TaskStatus!
+  dueDate: ISO8601DateTime
+}
+
+input UpdateTaskInput {
+  id: ID!
+  status: TaskStatus
+  description: String
+  dueDate: ISO8601DateTime
+}
+
+
+type Mutation {
+  createProject(input: CreateProjectInput!): Project!
+  createTask(input: CreateTaskInput!): Task!
+  updateTask(input: UpdateTaskInput!): Task!
+  deleteProject(id: ID!): Project!
+  restoreProject(id: ID!): Project!
+}
+
+type Subscription {
+  taskStatusChanged(projectId: ID!): Task!
+}
+
+schema {
+  query: Query
+  mutation: Mutation
+  subscription: Subscription
+}

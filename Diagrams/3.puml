@@ -1,0 +1,60 @@
+Сценарий
+Пользователь на фронтенде ждёт обновления статуса заказа. Фронтенд начинает периодически опрашивать status-service запросами GET /api/v1/status-service/order/{id}/status. Это происходит в цикле.
+
+status-service асинхронно читает события о статусах из Kafka-топика kafka.status-service.order.status. События туда пишет status-tree-provider. Для этого status-service сравнивает новый статус со старым, который хранится в базе данных.
+
+Если статус прежний — ничего не меняем, ждём дальше.
+Если статус новый — обновляем базу данных и отправляем новый статус фронтенду.
+
+@startuml
+
+actor "Пользователь" as user
+participant "Front" as front
+participant "status-service" as status_service
+database "База статусов" as status_db
+queue "kafka.status-service.order.status" as status_topic
+participant "status-tree-provider" as status_provider
+
+autonumber
+
+user -> front: Ожидает обновление статуса
+activate front
+
+front -> status_service: Первый Polling-запрос\nGET /api/v1/status-service/order/{id}/status
+activate status_service
+status_service -> status_db: Получить текущий статус
+activate status_db
+status_db --> status_service: Статус "создан"
+deactivate status_db
+status_service --> front: Статус "создан"
+deactivate status_service
+
+== Поступление нового статуса ==
+
+status_provider ->> status_topic: Записать событие со статусом
+activate status_topic
+
+status_topic -->> status_service: Прочитать событие со статусом
+deactivate status_topic
+
+activate status_service
+status_service -> status_db: Получить текущий статус
+activate status_db
+status_db --> status_service: Статус "создан"
+deactivate status_db
+
+alt Статус отличается
+    status_service -> status_db: Обновить статус заказа
+    activate status_db
+    status_db --> status_service: Статус записан
+    deactivate status_db
+    status_service --> front: Новый статус "собран"
+else Статус прежний
+    status_service -> status_service: Ничего не делаем
+end
+deactivate status_service
+
+front --> user: Отобразить актуальный статус
+deactivate front
+
+@enduml

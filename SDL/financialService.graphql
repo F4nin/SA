@@ -1,0 +1,60 @@
+type ChartData {
+    ticker: String!
+    timestamp: ISO8601DateTime!
+    lastPrice: Float!
+    openPrice: Float!
+    closePrice: Float
+    maxPrice: Float!
+    minPrice: Float!
+    indicators: [Indicator]
+}
+
+scalar ISO8601DateTime
+
+type Indicator {
+    id: ID!
+    title: String!
+    values: [Value!]!
+}
+
+type Value {
+    timestamp: ISO8601DateTime!
+    valueTitle: String!
+    value: String!
+}
+
+getPriceByDate(
+    ticker: String!,
+    date: ISO8601DateTime
+): ChartData!
+
+getChartByPeriod(
+  ticker: String!
+  timeFrame: String!
+  startDate: ISO8601DateTime
+  endDate: ISO8601DateTime
+  indicator: [String]
+): [ChartData!]!
+
+subscribeChart: ChartData!
+
+type Query {
+    getPriceByDate(ticker: String!, date: ISO8601DateTime): ChartData!
+    getChartByPeriod(
+        ticker: String!
+        timeFrame: String!
+        startDate: ISO8601DateTime
+        endDate: ISO8601DateTime
+        indicator: [String]
+): [ChartData!]!
+}
+
+type Subscription{
+    subscribeChart: ChartData!
+}
+
+schema {
+  query: Query
+  subscription: Subscription
+}
+

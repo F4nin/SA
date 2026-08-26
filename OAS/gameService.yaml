@@ -1,0 +1,475 @@
+openapi: 3.0.3
+info:
+  title: API Киберспортивной платформы
+  description: Спецификация киберспортивной платформы с поддержкой авторизации через OAuth2
+  version: 1.0.0
+  contact:
+    name: Поддержка API
+    url: 'https://www.example.com/support'
+    email: cybersport@mail.com
+  license:
+    name: Apache 2.0
+    url: 'https://opensource.org/licenses/LICENSE-2.0.html'
+servers:
+  - url: 'https://api.example.com/v1'
+    description: Продакшен
+  - url: 'https://api-stg.example.com/v1'
+    description: Стейджинг
+
+
+tags:
+  - name: Client methods
+    description: 'Операции, доступные клиентам: просмотр списка матчей и одного матча'
+  - name: Admin methods
+    description: 'Операции администратора: создание, редактирование и удаление матчей'
+
+
+paths:
+  /matches:
+    get:
+      security:
+        - OAuth2Auth:
+            - matches:read
+      summary: Получить список всех матчей
+      description: Возвращает список всех матчей
+      operationId: getListMatches
+      tags:
+        - Client methods
+        - Admin methods
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          description: Максимальное количество матчей в ответе
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          required: false
+          description: Смещение от начала списка
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: game
+          in: query
+          required: false
+          description: Фильтр по названию игры
+          schema:
+            $ref: '#/components/schemas/Games'
+        - name: teamId
+          in: query
+          required: false
+          description: Фильтр по идентификатору команды
+          schema:
+            type: string
+            pattern: '^[0-9]+$'
+            example: "123456789"
+        - name: search
+          in: query
+          required: false
+          description: Поисковый текст по названию матча или команды
+          schema:
+            type: string
+            example: 'финал'
+      responses:
+        '200':
+          description: Список матчей
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      security:
+        - OAuth2Auth:
+            - matches:write
+      summary: Создать матч
+      description: >
+        Создаёт новый матч. Повторный запрос с тем же Idempotency-Key
+        не создаёт дубликат, а возвращает исходный матч с кодом 409
+      operationId: createMatch
+      tags:
+        - Admin methods
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: Уникальный ключ идемпотентности для предотвращения дубликатов
+          schema:
+            type: string
+            format: uuid
+            example: "b8e2f1a0-4d3f-4e7b-9a2c-5f6d7e8a9b0c"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MatchInput'
+      responses:
+        '201':
+          description: Матч создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Match'
+        '409':
+          description: Повторный запрос с тем же Idempotency-Key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Match'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /matches/{matchId}:
+    get:
+      security:
+        - OAuth2Auth:
+            - matches:read
+      summary: Получить матч по идентификатору
+      description: Возвращает один матч по его идентификатору
+      operationId: getMatchById
+      tags:
+        - Client methods
+        - Admin methods
+      parameters:
+        - name: matchId
+          in: path
+          required: true
+          description: Идентификатор матча
+          schema:
+            type: string
+            pattern: '^[0-9]+$'
+            example: "123456789"
+      responses:
+        '200':
+          description: Матч найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Match'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      security:
+        - OAuth2Auth:
+            - matches:write
+      summary: Полностью обновить матч
+      description: >
+        Полностью заменяет данные матча по его идентификатору.
+        Идентификатор передаётся в пути, поэтому в теле он отсутствует
+      operationId: updateMatch
+      tags:
+        - Admin methods
+      parameters:
+        - name: matchId
+          in: path
+          required: true
+          description: Идентификатор матча
+          schema:
+            type: string
+            pattern: '^[0-9]+$'
+            example: "123456789"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MatchInput'
+      responses:
+        '200':
+          description: Данные матча обновлены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Match'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      security:
+        - OAuth2Auth:
+            - matches:write
+      summary: Удалить матч
+      description: Удаляет матч по его идентификатору
+      operationId: deleteMatch
+      tags:
+        - Admin methods
+      parameters:
+        - name: matchId
+          in: path
+          required: true
+          description: Идентификатор матча
+          schema:
+            type: string
+            pattern: '^[0-9]+$'
+            example: "123456789"
+      responses:
+        '200':
+          description: Матч удалён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+
+
+
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 400
+        message:
+          type: string
+          example: Описание ошибки
+      required:
+        - code
+        - message
+
+    Games:
+      type: string
+      enum: ["Dota 2", "CS 2", "Overwatch 2"]
+
+    Status:
+      type: string
+      enum: ["not started", "in progress", "finished"]
+
+    Team:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Идентификатор команды
+          readOnly: true
+          pattern: '^[0-9]+$'
+          example: "123456789"
+        name:
+          type: string
+          example: "Team Spirit"
+        description:
+          type: string
+          description: Краткое описание команды
+          maxLength: 200
+          example: "Профессиональная киберспортивная команда"
+      required:
+        - id
+        - name
+
+    BaseEvent:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "BB Dacha"
+        coefficient:
+          type: number
+          format: double
+          example: 5.5
+        score:
+          type: string
+          description: Счёт матча в формате "команда1:команда2"
+          pattern: '^\d+:\d+$'
+          example: "2:1"
+      required:
+        - name
+        - coefficient
+        - score
+
+    GameEvent:
+      allOf:
+        - type: object
+          properties:
+            id:
+              type: string
+              description: Идентификатор события
+              readOnly: true
+              pattern: '^[0-9]+$'
+              example: "123456789"
+            status:
+              $ref: '#/components/schemas/Status'
+          required:
+            - id
+            - status
+        - $ref: '#/components/schemas/BaseEvent'
+
+    BaseMatch:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Название матча"
+        game:
+          $ref: '#/components/schemas/Games'
+        startDate:
+          type: string
+          format: date-time
+          example: "2026-08-23T20:20:00Z"
+      required:
+        - name
+        - game
+        - startDate
+
+    Match:
+      allOf:
+        - type: object
+          properties:
+            id:
+              type: string
+              description: Идентификатор матча, присвоенный сервером
+              readOnly: true
+              pattern: '^[0-9]+$'
+              example: "123456789"
+            team1:
+              $ref: '#/components/schemas/Team'
+            team2:
+              $ref: '#/components/schemas/Team'
+            status:
+              $ref: '#/components/schemas/Status'
+            events:
+              type: array
+              items:
+                $ref: '#/components/schemas/GameEvent'
+          required:
+            - id
+            - team1
+            - team2
+            - status
+            - events
+        - $ref: '#/components/schemas/BaseMatch'
+
+    MatchInput:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Название матча"
+        game:
+          $ref: '#/components/schemas/Games'
+        startDate:
+          type: string
+          format: date-time
+          example: "2026-08-23T20:20:00Z"
+        team1Id:
+          type: string
+          pattern: '^[0-9]+$'
+          example: "123456789"
+        team2Id:
+          type: string
+          pattern: '^[0-9]+$'
+          example: "123456790"
+      required:
+        - name
+        - game
+        - startDate
+        - team1Id
+        - team2Id
+
+    MatchList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Match'
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+      required:
+        - items
+
+    DeleteResult:
+      type: object
+      properties:
+        status:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "Матч 123456789 удалён"
+      required:
+        - status
+        - message
+
+  responses:
+    BadRequest:
+      description: Некорректный запрос
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Ресурс не найден
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InternalServerError:
+      description: Внутренняя ошибка сервера
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Не авторизован
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  securitySchemes:
+    OAuth2Auth:
+      type: oauth2
+      description: >
+        Аутентификация через OAuth2. Роли определяются scope:
+        matches:read — просмотр списка матчей и одного матча;
+        matches:write — создание, обновление и удаление матчей.
+      flows:
+        authorizationCode:
+          authorizationUrl: https://example.com/oauth/authorize
+          tokenUrl: https://example.com/oauth/token
+          scopes:
+            matches:read: Просмотр списка матчей и одного матча
+            matches:write: Создание, обновление и удаление матчей
+

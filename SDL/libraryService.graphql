@@ -1,0 +1,92 @@
+type Book{
+    id: ID!
+    title: String!
+    author: String!
+    publishedYear: Int
+    tags: [String!]!
+    reviews: [Review!]!
+}
+
+scalar ISO8601DateTime
+
+type Review{
+    id: ID!
+    book: Book!
+    author: User!
+    rating: Int!
+    text: String
+    createdAt: ISO8601DateTime!
+}
+
+type User {
+    id: ID!
+    name: String!
+}
+
+getBooksByTag(
+    tags: String!
+): [Book!]!
+
+getBookById(
+    id: ID!
+): Book
+
+getBookReviews(
+    bookId: ID!
+    first: Int
+    after: String
+): ReviewConnection!
+
+type ReviewConnection{
+    edges: [ReviewEdge!]!
+    pageInfo: PageInfo!
+    totalCount: Int!
+}
+type ReviewEdge {
+  node: Review!
+  cursor: String!
+}
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}
+
+type Query {
+    getBooksByTag(tag: String!): [Book!]!
+    getBookById(id: ID!): Book
+    getBookReviews(bookId: ID!, first: Int, after: String): ReviewConnection!
+}
+
+input CreateBookInput{
+    idempotenceKey: ID!
+    title: String!
+    author: String!
+    publishedYear: Int
+    tags: [String!]!
+}
+input CreateReviewForBookInput{
+    idempotenceKey: ID!
+    bookId: ID!
+    authorId: ID!
+    rating: Int!
+    text: String
+}
+
+type Mutation {
+    createBook(input: CreateBookInput!): Book!
+    createReview(input: CreateReviewForBookInput!): Review!
+}
+
+reviewAdded(bookId: ID!): Review!
+
+type Subscription{
+    reviewAdded(bookId: ID!): Review!
+
+}
+schema {
+    query: Query
+    mutation: Mutation
+    subscription: Subscription
+}

@@ -1,0 +1,39 @@
+Сценарий
+Пользователь открывает страницу входа, вводит email и пароль.
+Frontend отправляет запрос в auth-service.
+auth-service проверяет пользователя в базе данных.
+
+При успехе:
+auth-service возвращает 200 OK и токен.
+Frontend открывает личный кабинет.
+
+При ошибке:
+auth-service возвращает 401 Unauthorized.
+Frontend показывает сообщение «Неверный логин или пароль»
+@startuml
+actor "Пользователь" as user
+participant "Front" as front
+participant "auth-service" as auth
+database "DB Users" as db
+
+autonumber
+
+user -> front: Ввод email и пароля
+activate front
+front -> auth: POST /api/v1/auth
+activate auth
+auth -> db: Проверка пользователя
+activate db
+db --> auth: Данные пользователя
+deactivate db
+alt Успешная аутентификациея
+    auth --> front: 200 OK + токен
+    front --> user: Успешный логин
+else Ошибка аутентификации
+    auth --> front: 401 Unauthorized
+    front --> user: Неверный логин или пароль
+end
+
+deactivate auth
+deactivate front
+@enduml

@@ -1,0 +1,386 @@
+openapi: 3.0.3
+info:
+  title: API библиотеки
+  description: Спецификация цифрового каталога книг с поддержкой авторизации через OAuth2.
+  version: 1.0.0
+  contact:
+    name: Поддержка API
+    url: 'https://www.example.com/support'
+    email: library@mail.com
+  license:
+    name: Apache 2.0
+    url: 'https://opensource.org/licenses/LICENSE-2.0.html'
+servers:
+  - url: 'https://api.example.com/v1'
+    description: Продакшен
+  - url: 'https://api-stg.example.com/v1'
+    description: Стейджинг
+
+tags:
+  - name: Books
+    description: Операции с коллекцией книг. Получение списка и создание книги
+  - name: Book
+    description: Операции с отдельной книгой. Просмотр, полное обновление, частичное обновление и удаление
+
+paths:
+  /books:
+    get:
+      summary: Получить список книг
+      description: Возвращает постраничный список книг каталога
+      operationId: getListBooks
+      security: []
+      tags:
+        - Books
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          description: Максимальное количество книг в ответе
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          required: false
+          description: Смещение от начала списка
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: Список книг
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookList'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Создать книгу
+      description: Создаёт новую книгу в каталоге. Идентификатор присваивается сервером.
+      operationId: createBook
+      security:
+        - OAuth2Auth:
+            - books:write
+      tags:
+        - Books
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestBook'
+      responses:
+        '201':
+          description: Книга создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /books/{id}:
+    get:
+      summary: Получить книгу по идентификатору
+      description: Возвращает одну книгу по её идентификатору
+      operationId: getBookById
+      security: []
+      tags:
+        - Book
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9]+$'
+            example: "123456789"
+      responses:
+        '200':
+          description: Книга найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      summary: Полное обновление книги
+      description: Полностью заменяет данные книги по её идентификатору
+      operationId: updateBookById
+      security:
+        - OAuth2Auth:
+            - books:write
+      tags:
+        - Book
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9]+$'
+            example: "123456789"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestBook'
+      responses:
+        '200':
+          description: Данные книги обновлены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    patch:
+      summary: Частично обновить книгу
+      description: Частично обновляет данные книги по её идентификатору
+      operationId: patchBookById
+      security:
+        - OAuth2Auth:
+            - books:write
+      tags:
+        - Book
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9]+$'
+            example: "123456789"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchBook'
+      responses:
+        '200':
+          description: Данные книги обновлены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      summary: Удалить книгу
+      description: Удаляет книгу по её идентификатору
+      operationId: deleteBookById
+      security:
+        - OAuth2Auth:
+            - books:write
+      tags:
+        - Book
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9]+$'
+            example: "123456789"
+      responses:
+        '200':
+          description: Книга удалена
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Книга 123456789 удалена
+                required:
+                  - status
+                  - message
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 404
+        message:
+          type: string
+          example: Описание ошибки
+      required:
+        - code
+        - message
+
+    BaseBook:
+      type: object
+      properties:
+        title:
+          type: string
+          example: "Война и Мир"
+        author:
+          type: string
+          example: "Л.Н. Толстой"
+        isbn:
+          type: string
+          description: Международный стандартный номер книги
+          pattern: '^\d{4}-\d{4}-\d{3}$'
+          example: "1234-5678-123"
+        publicationYear:
+          type: integer
+          format: int32
+          description: Год издания
+          minimum: 1000
+          maximum: 2100
+          example: 1869
+        genre:
+          type: string
+          description: Жанр
+          example: "Роман"
+
+    Book:
+      allOf:
+        - type: object
+          properties:
+            id:
+              type: string
+              description: Идентификатор книги, присвоенный сервером
+              readOnly: true
+              pattern: '^[0-9]+$'
+              example: "123456789"
+            totalCopies:
+              type: integer
+              format: int32
+              description: Всего экземпляров в библиотеке
+              minimum: 0
+              readOnly: true
+              example: 1000
+            availableCopies:
+              type: integer
+              format: int32
+              description: Доступно для выдачи
+              minimum: 0
+              readOnly: true
+              example: 200
+        - $ref: '#/components/schemas/BaseBook'
+      required:
+        - id
+        - title
+        - author
+        - isbn
+
+    BookList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Book'
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+      required:
+        - items
+
+    RequestBook:
+      allOf:
+        - $ref: '#/components/schemas/BaseBook'
+      required:
+        - title
+        - author
+        - isbn
+
+    PatchBook:
+      $ref: '#/components/schemas/BaseBook'
+
+  responses:
+    BadRequest:
+      description: Некорректный запрос
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Не авторизован
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Ресурс не найден
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InternalServerError:
+      description: Внутренняя ошибка сервера
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  securitySchemes:
+    OAuth2Auth:
+      type: oauth2
+      description: >
+        Аутентификация через OAuth2. Роли определяются scope:
+        books:read — просмотр каталога;
+        books:write — создание, изменение и удаление книг.
+      flows:
+        authorizationCode:
+          authorizationUrl: https://library.com/oauth/authorize
+          tokenUrl: https://library.com/oauth/token
+          scopes:
+            books:read: Просмотр списка книг и отдельной книги
+            books:write: Создание, изменение и удаление книг
+
+externalDocs:
+  description: Полная документация API библиотеки
+  url: https://library.com/api-documentation

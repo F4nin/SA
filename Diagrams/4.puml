@@ -1,0 +1,45 @@
+
+@startuml
+actor "Пользователь" as user
+box "Подразделение: Клиентские сервисы" #LightBlue
+participant "Front" as front
+participant "checkout-service" as checkout
+database "База заказов" as db_order
+end box
+
+queue "kafka.order-service.order.create" as order_topic
+
+box "Сервисы доставки" #LightGreen
+participant "delivery-service" as delivery_service
+database "База данных доставки" as db_delivery
+
+end box
+
+autonumber
+user -> front: Пользователь оформил заказ
+activate front
+front -> checkout: POST\n/api/v1/checkout-service/orders/create
+activate checkout
+checkout -> db_order: Сохранение заказа
+activate db_order
+db_order --> checkout: Получение id заказа
+deactivate db_order
+checkout ->> order_topic: Запись события о создании заказа
+activate order_topic
+checkout --> front: 202 Accepted
+deactivate checkout
+front --> user: Заказ принят
+deactivate front
+
+== Асинхронная обработка ==
+
+order_topic -->> delivery_service: Чтение событий
+deactivate order_topic
+activate delivery_service
+delivery_service -> db_delivery: Создание активности доставки
+activate db_delivery
+db_delivery --> delivery_service: Подтверждение записи
+deactivate delivery_service
+deactivate db_delivery
+@enduml
+
