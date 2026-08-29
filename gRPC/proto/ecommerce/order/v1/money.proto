@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package ecommerce.order.v1;
+
+
+
+// Деньги храним в минорных единицах + код валюты ISO 4217.
+// Никогда не используем double/float для денег.
+message Money {
+  int64 amount_minor_units = 1; // сумма в копейках/центах
+  string currency_code = 2;     // "RUB", "USD", "EUR"
+}

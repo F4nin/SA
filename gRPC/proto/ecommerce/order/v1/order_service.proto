@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package ecommerce.order.v1;
+
+import "google/api/annotations.proto";
+
+import "ecommerce/order/v1/create_order_request.proto";
+import "ecommerce/order/v1/create_order_response.proto";
+import "ecommerce/order/v1/get_order_request.proto";
+import "ecommerce/order/v1/get_order_response.proto";
+import "ecommerce/order/v1/update_order_status_request.proto";
+import "ecommerce/order/v1/cancel_order_request.proto";
+import "ecommerce/order/v1/cancel_order_response.proto";
+import "ecommerce/order/v1/watch_order_status_request.proto";
+import "ecommerce/order/v1/update_order_status_response.proto";
+import "ecommerce/order/v1/order_status_event.proto";
+
+
+service OrderService {
+  rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/orders"
+      body: "*"
+    };
+  }
+
+  rpc GetOrder(GetOrderRequest) returns (GetOrderResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/orders/{order_id}"
+    };
+  }
+
+  rpc UpdateOrderStatus(UpdateOrderStatusRequest) returns (UpdateOrderStatusResponse) {
+    option (google.api.http) = {
+      patch: "/api/v1/orders/{order_id}/status"
+      body: "*"
+    };
+  }
+
+  rpc CancelOrder(CancelOrderRequest) returns (CancelOrderResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/orders/{order_id}/cancel"
+      body: "*"
+    };
+  }
+
+  rpc WatchOrderStatus(WatchOrderStatusRequest) returns (stream OrderStatusEvent) {
+    option (google.api.http) = {
+      get: "/api/v1/orders/{order_id}/status/stream"
+    };
+  }
+}

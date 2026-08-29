@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package ecommerce.order.v1;
+
+
+
+import "ecommerce/order/v1/order.proto";
+
+// Ответ на GetOrderRequest.
+// Содержит заказ, если он существует.
+// Если заказ не найден, возвращается gRPC-статус NOT_FOUND,
+// а не поле ошибки внутри ответа.
+message GetOrderResponse{
+  Order order = 1;
+}
+

@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package ecommerce.order.v1;
+
+
+
+import "ecommerce/order/v1/order_status.proto";
+import "google/protobuf/timestamp.proto";
+
+// Событие смены статуса заказа.
+// Высылается подписчику в потоке WatchOrderStatus. Содержит только то,
+// что изменилось, а не весь заказ: полные данные клиент может запросить
+// отдельно через GetOrder.
+message OrderStatusEvent{
+  string order_id = 1;
+  OrderStatus status = 2;
+  google.protobuf.Timestamp updated_at = 3;
+}

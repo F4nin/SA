@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package ecommerce.order.v1;
+
+
+
+import "ecommerce/order/v1/order_item_input.proto";
+
+// Запрос на создание заказа.
+//
+// idempotency_key обязателен: при повторном запросе с тем же ключом
+// сервер вернёт уже созданный заказ, а не создаст дубликат.
+// promo_code необязателен; optional отличает "не передали" от пустой строки.
+message CreateOrderRequest{
+  string user_id = 1;
+  repeated OrderItemInput items = 2;
+  string idempotency_key = 3;
+  optional string promo_code = 4;
+
+}

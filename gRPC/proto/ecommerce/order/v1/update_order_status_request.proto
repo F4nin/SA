@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package ecommerce.order.v1;
+
+
+
+import "ecommerce/order/v1/order_status.proto";
+
+// Запрос на изменение статуса заказа.
+// new_status — целевой статус; порядок переходов проверяет сервер
+// (например, нельзя отменить уже завершённый заказ).
+message UpdateOrderStatusRequest{
+  string order_id = 1;
+  OrderStatus new_status = 2;
+  optional string reason = 3;
+}

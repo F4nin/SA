@@ -1,0 +1,22 @@
+version: v2
+managed:
+  enabled: true
+  override:
+    - file_option: go_package_prefix
+      value: github.com/example/order-service/gen
+plugins:
+  - local: protoc-gen-go
+    out: gen
+    opt: paths=source_relative
+  - local: protoc-gen-go-grpc
+    out: gen
+    opt: paths=source_relative
+  - local: protoc-gen-grpc-gateway
+    out: gen/gateway
+    opt:
+      - paths=source_relative
+      - generate_unbound_methods=false
+  - local: protoc-gen-openapiv2
+    out: gen/openapiv2
+    opt:
+      - generate_unbound_methods=false

@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package ecommerce.order.v1;
+
+
+
+import "ecommerce/order/v1/order.proto";
+
+// Ответ на CreateOrderRequest.
+// Содержит созданный заказ со всеми рассчитанными сервером полями:
+// id, итоговой суммой, статусом и позициями-снимками.
+message CreateOrderResponse{
+  Order order = 1;
+}

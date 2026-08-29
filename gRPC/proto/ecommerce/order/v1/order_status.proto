@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package ecommerce.order.v1;
+
+
+
+// Статус заказа.
+// Первое значение всегда 0 и означает "не задано" — это значение по умолчанию
+// для любого enum-поля, поэтому оно не может обозначать реальный статус.
+enum OrderStatus {
+  ORDER_STATUS_UNSPECIFIED = 0;
+  ORDER_STATUS_PENDING = 1;
+  ORDER_STATUS_CONFIRMED = 2;
+  ORDER_STATUS_PAID = 3;
+  ORDER_STATUS_SHIPPED = 4;
+  ORDER_STATUS_COMPLETED = 5;
+  ORDER_STATUS_CANCELLED = 6;
+}

@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package ecommerce.order.v1;
+
+
+
+import "ecommerce/order/v1/order_item.proto";
+import "ecommerce/order/v1/address.proto";
+import "ecommerce/order/v1/order_status.proto";
+
+// Заказ покупателя.
+// Хранит снимки данных, важных на момент оформления:
+// позиции, итоговую сумму, статус и адрес доставки.
+message Order{
+  string id = 1;                       // идентификатор заказа, генерируется сервером
+  string user_id = 2;                  // ссылка на пользователя; полный User хранится в своём сервисе
+  repeated OrderItem items = 3;        // позиции заказа (снимки товаров)
+  int64 total_price_minor_units = 4;   // итоговая сумма в минорных единицах
+  string currency_code = 5;            // код валюты ISO 4217
+  OrderStatus status = 6;              // текущий статус заказа
+  Address shipping_address = 8;        // адрес доставки как снимок
+
+  // Поле 7 удалено. Резервируем номер и старое имя,
+  // чтобы старые данные не были ошибочно прочитаны как другое поле.
+  reserved 7;
+  reserved "delivery_address";
+
+
+}

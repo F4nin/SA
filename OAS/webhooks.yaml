@@ -1,0 +1,99 @@
+openapi: 3.1.0
+info:
+  title: Вебхуки WFS CLI
+  description: Вебхуки (события), запускаемые CLI WFS.
+  version: v1
+webhooks:
+  dummy.event:
+    post:
+      summary: Тестовое событие, созданное в сервисе-источнике
+      description: |
+        Вебхук, инициированный сервисом-источником (поставщиком API),
+        и ожидаемые ответы от целевого сервиса (потребителя API).
+        **Предупреждение:** Ответ от целевого сервиса с кодом состояния,
+        отличающимся от 2XX,считается неудачным вебхуком.
+      parameters:
+        - $ref: '#/components/parameters/WebhookId'
+        - $ref: '#/components/parameters/WebhookSignature'
+        - $ref: '#/components/parameters/WebhookTimestamp'
+      requestBody:
+        $ref: '#/components/requestBodies/Event'
+      responses:
+        200:
+          $ref: '#/components/responses/OK'
+        400:
+          $ref: '#/components/responses/BadRequest'
+
+components:
+  parameters:
+    WebhookId:
+      name: Webhook-Id
+      in: header
+      required: true
+      schema:
+        type: string
+    WebhookSignature:
+      name: Webhook-Signature
+      in: header
+      required: true
+      schema:
+        type: string
+    WebhookTimestamp:
+      name: Webhook-Timestamp
+      in: header
+      required: true
+      schema:
+        type: string
+  requestBodies:
+    Event:
+      description: JSON-полезная нагрузка события
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Event'
+          examples:
+            dummy.event:
+              value:
+                type: dummy.event
+                timestamp: 1709111631
+                data:
+                  echo: test
+  responses:
+    OK:
+      description: Вебхук принят целевым сервисом
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Event'
+    BadRequest:
+      description: Вебхук отклонен целевым сервисом
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  schemas:
+    Event:
+      type: object
+      required:
+        - type
+        - timestamp
+        - data
+      properties:
+        type:
+          type: string
+          description: Тип события
+        timestamp:
+          type: string
+          description: Метка времени события
+        data:
+          type: object
+          description: Данные, связанные с событием
+    Error:
+      type: object
+      properties:
+        errors:
+          type: array
+          description: Сообщение об ошибке!
+          items:
+            type: string

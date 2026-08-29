@@ -1,0 +1,429 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "ecommerce/order/v1/order_service.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "OrderService"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/api/v1/orders": {
+      "post": {
+        "operationId": "OrderService_CreateOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CreateOrderResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "description": "Запрос на создание заказа.\n\nidempotency_key обязателен: при повторном запросе с тем же ключом\nсервер вернёт уже созданный заказ, а не создаст дубликат.\npromo_code необязателен; optional отличает \"не передали\" от пустой строки.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1CreateOrderRequest"
+            }
+          }
+        ],
+        "tags": [
+          "OrderService"
+        ]
+      }
+    },
+    "/api/v1/orders/{orderId}": {
+      "get": {
+        "operationId": "OrderService_GetOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetOrderResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "OrderService"
+        ]
+      }
+    },
+    "/api/v1/orders/{orderId}/cancel": {
+      "post": {
+        "operationId": "OrderService_CancelOrder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1CancelOrderResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/OrderServiceCancelOrderBody"
+            }
+          }
+        ],
+        "tags": [
+          "OrderService"
+        ]
+      }
+    },
+    "/api/v1/orders/{orderId}/status": {
+      "patch": {
+        "operationId": "OrderService_UpdateOrderStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UpdateOrderStatusResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/OrderServiceUpdateOrderStatusBody"
+            }
+          }
+        ],
+        "tags": [
+          "OrderService"
+        ]
+      }
+    },
+    "/api/v1/orders/{orderId}/status/stream": {
+      "get": {
+        "operationId": "OrderService_WatchOrderStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/v1OrderStatusEvent"
+                },
+                "error": {
+                  "$ref": "#/definitions/rpcStatus"
+                }
+              },
+              "title": "Stream result of v1OrderStatusEvent"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "OrderService"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "OrderServiceCancelOrderBody": {
+      "type": "object",
+      "properties": {
+        "reason": {
+          "type": "string"
+        }
+      },
+      "description": "Запрос на отмену заказа.\nОтмена выделена в отдельный RPC, а не делается через UpdateOrderStatus,\nпотому что она несёт дополнительную бизнес-логику: возврат средств,\nснятие резерва товара, уведомление пользователя.\nПорядок переходов проверяет сервер (нельзя отменить завершённый\nили уже отменённый заказ)."
+    },
+    "OrderServiceUpdateOrderStatusBody": {
+      "type": "object",
+      "properties": {
+        "newStatus": {
+          "$ref": "#/definitions/v1OrderStatus"
+        },
+        "reason": {
+          "type": "string"
+        }
+      },
+      "description": "Запрос на изменение статуса заказа.\nnew_status — целевой статус; порядок переходов проверяет сервер\n(например, нельзя отменить уже завершённый заказ)."
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "v1Address": {
+      "type": "object",
+      "properties": {
+        "country": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        },
+        "street": {
+          "type": "string"
+        },
+        "zipCode": {
+          "type": "string"
+        }
+      },
+      "description": "Адрес доставки заказа.\nХранится как снимок на момент оформления заказа,\nчтобы изменение адреса в профиле пользователя не меняло прошлые заказы."
+    },
+    "v1CancelOrderResponse": {
+      "type": "object",
+      "properties": {
+        "order": {
+          "$ref": "#/definitions/v1Order"
+        }
+      },
+      "description": "Ответ на CancelOrderRequest.\nВозвращаем отмененный заказ целиком, чтобы клиент сразу получил\nактуальное состояние без дополнительного GET-запроса.\nЕсли заказ не найден — gRPC-статус NOT_FOUND."
+    },
+    "v1CreateOrderRequest": {
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1OrderItemInput"
+          }
+        },
+        "idempotencyKey": {
+          "type": "string"
+        },
+        "promoCode": {
+          "type": "string"
+        }
+      },
+      "description": "Запрос на создание заказа.\n\nidempotency_key обязателен: при повторном запросе с тем же ключом\nсервер вернёт уже созданный заказ, а не создаст дубликат.\npromo_code необязателен; optional отличает \"не передали\" от пустой строки."
+    },
+    "v1CreateOrderResponse": {
+      "type": "object",
+      "properties": {
+        "order": {
+          "$ref": "#/definitions/v1Order"
+        }
+      },
+      "description": "Ответ на CreateOrderRequest.\nСодержит созданный заказ со всеми рассчитанными сервером полями:\nid, итоговой суммой, статусом и позициями-снимками."
+    },
+    "v1GetOrderResponse": {
+      "type": "object",
+      "properties": {
+        "order": {
+          "$ref": "#/definitions/v1Order"
+        }
+      },
+      "description": "Ответ на GetOrderRequest.\nСодержит заказ, если он существует.\nЕсли заказ не найден, возвращается gRPC-статус NOT_FOUND,\nа не поле ошибки внутри ответа."
+    },
+    "v1Order": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "идентификатор заказа, генерируется сервером"
+        },
+        "userId": {
+          "type": "string",
+          "title": "ссылка на пользователя; полный User хранится в своём сервисе"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1OrderItem"
+          },
+          "title": "позиции заказа (снимки товаров)"
+        },
+        "totalPriceMinorUnits": {
+          "type": "string",
+          "format": "int64",
+          "title": "итоговая сумма в минорных единицах"
+        },
+        "currencyCode": {
+          "type": "string",
+          "title": "код валюты ISO 4217"
+        },
+        "status": {
+          "$ref": "#/definitions/v1OrderStatus",
+          "title": "текущий статус заказа"
+        },
+        "shippingAddress": {
+          "$ref": "#/definitions/v1Address",
+          "title": "адрес доставки как снимок"
+        }
+      },
+      "description": "Заказ покупателя.\nХранит снимки данных, важных на момент оформления:\nпозиции, итоговую сумму, статус и адрес доставки."
+    },
+    "v1OrderItem": {
+      "type": "object",
+      "properties": {
+        "productId": {
+          "type": "string"
+        },
+        "productName": {
+          "type": "string",
+          "title": "название товара на момент заказа"
+        },
+        "unitPriceMinorUnits": {
+          "type": "string",
+          "format": "int64",
+          "title": "цена позиции в минорных единицах на момент заказа"
+        },
+        "quantity": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "description": "Позиция заказа — это снимок (snapshot) товара на момент оформления заказа.\nМы сохраняем название и цену прямо в заказе, чтобы изменения каталога\n(смена цены, названия или удаление товара) не влияли на уже созданные заказы."
+    },
+    "v1OrderItemInput": {
+      "type": "object",
+      "properties": {
+        "productId": {
+          "type": "string"
+        },
+        "quantity": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "description": "Входная позиция при создании заказа.\nКлиент передаёт только идентификатор товара и количество.\nНазвание и цену сервер берёт из каталога в момент создания заказа,\nпоэтому клиент не может подделать цену или название."
+    },
+    "v1OrderStatus": {
+      "type": "string",
+      "enum": [
+        "ORDER_STATUS_UNSPECIFIED",
+        "ORDER_STATUS_PENDING",
+        "ORDER_STATUS_CONFIRMED",
+        "ORDER_STATUS_PAID",
+        "ORDER_STATUS_SHIPPED",
+        "ORDER_STATUS_COMPLETED",
+        "ORDER_STATUS_CANCELLED"
+      ],
+      "default": "ORDER_STATUS_UNSPECIFIED",
+      "description": "Статус заказа.\nПервое значение всегда 0 и означает \"не задано\" — это значение по умолчанию\nдля любого enum-поля, поэтому оно не может обозначать реальный статус."
+    },
+    "v1OrderStatusEvent": {
+      "type": "object",
+      "properties": {
+        "orderId": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/v1OrderStatus"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "description": "Событие смены статуса заказа.\nВысылается подписчику в потоке WatchOrderStatus. Содержит только то,\nчто изменилось, а не весь заказ: полные данные клиент может запросить\nотдельно через GetOrder."
+    },
+    "v1UpdateOrderStatusResponse": {
+      "type": "object",
+      "properties": {
+        "order": {
+          "$ref": "#/definitions/v1Order"
+        }
+      },
+      "description": "Ответ на UpdateOrderStatusRequest.\nВозвращаем обновлённый заказ целиком, чтобы клиент сразу получил\nактуальное состояние без дополнительного GET-запроса.\nЕсли заказ не найден — gRPC-статус NOT_FOUND."
+    }
+  }
+}

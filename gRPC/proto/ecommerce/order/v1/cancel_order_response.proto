@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package ecommerce.order.v1;
+
+
+
+import "ecommerce/order/v1/order.proto";
+
+// Ответ на CancelOrderRequest.
+// Возвращаем отмененный заказ целиком, чтобы клиент сразу получил
+// актуальное состояние без дополнительного GET-запроса.
+// Если заказ не найден — gRPC-статус NOT_FOUND.
+message CancelOrderResponse{
+  Order order = 1;
+}

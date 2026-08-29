@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package ecommerce.order.v1;
+
+
+
+// Запрос на подписку на изменения статуса заказа.
+// Клиент отправляет один запрос и получает поток OrderStatusEvent,
+// пока статус заказа меняется или пока соединение не будет закрыто.
+message WatchOrderStatusRequest{
+  string order_id = 1;
+}

@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package ecommerce.order.v1;
+
+
+
+
+// Запрос на получение заказа по его уникальному идентификатору.
+// order_id выдаётся сервером при создании заказа в CreateOrderResponse;
+// по нему клиент может запросить текущее состояние заказа.
+message GetOrderRequest{
+  string order_id = 1;
+}
