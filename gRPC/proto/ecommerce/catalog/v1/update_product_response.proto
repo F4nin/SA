@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package ecommerce.catalog.v1;
+
+import "ecommerce/catalog/v1/product.proto";
+
+
+// Ответ на UpdateProductRequest.
+// Возвращает обновлённый товар целиком, чтобы клиент сразу видел
+// актуальное состояние без дополнительного GetProduct.
+message UpdateProductResponse{
+  Product product = 1;
+}

@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package ecommerce.catalog.v1;
+
+
+// Статус товара
+// Первое значение всегда 0 и означает "не задано" — это значение по умолчанию
+// для любого enum-поля, поэтому оно не может обозначать реальный статус.
+enum ProductStatus{
+  PRODUCT_STATUS_UNSPECIFIED = 0;
+  PRODUCT_STATUS_ACTIVE = 1; // товар доступен в каталоге
+  PRODUCT_STATUS_HIDDEN = 2; // товар скрыт (soft delete)
+  PRODUCT_STATUS_ARCHIVED = 3; // товар полностью выведен из каталога
+}

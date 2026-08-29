@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package ecommerce.common.v1;
+
+// Деньги. Сумма хранится в минимальных денежных единицах (копейки, центы),
+// валюта — по коду ISO 4217.
+// Никогда не используем double/float для денег: они теряют точность
+// на десятичных дробях.
+message Money {
+  int64 amount_minor_units = 1; // сумма в копейках/центах
+  string currency_code = 2;     // "RUB", "USD", "EUR"
+}

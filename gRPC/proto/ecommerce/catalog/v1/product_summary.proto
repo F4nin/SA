@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package ecommerce.catalog.v1;
+
+import "ecommerce/common/v1/money.proto";
+import "ecommerce/catalog/v1/product_status.proto";
+
+// Лёгкая карточка товара для вывода списком.
+// Отличается от полного Product тем, что не содержит description:
+// в списке полное описание не нужно, а лишние поля раздувают ответ
+message ProductSummary{
+  string id = 1;
+  string name = 2;
+  string category_id = 3;
+  ecommerce.common.v1.Money price = 4;
+  int64 stock_quantity = 5;
+  ProductStatus status = 6;
+}

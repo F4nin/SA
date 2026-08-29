@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package ecommerce.catalog.v1;
+
+import "google/api/annotations.proto";
+
+import "ecommerce/catalog/v1/get_product_request.proto";
+import "ecommerce/catalog/v1/get_product_response.proto";
+import "ecommerce/catalog/v1/create_product_request.proto";
+import "ecommerce/catalog/v1/create_product_response.proto";
+import "ecommerce/catalog/v1/update_product_request.proto";
+import "ecommerce/catalog/v1/update_product_response.proto";
+import "ecommerce/catalog/v1/hide_product_request.proto";
+import "ecommerce/catalog/v1/hide_product_response.proto";
+import "ecommerce/catalog/v1/watch_stock_request.proto";
+import "ecommerce/catalog/v1/list_products_request.proto";
+import "ecommerce/catalog/v1/list_products_response.proto";
+import "ecommerce/catalog/v1/stock_event.proto";
+
+
+// Сервис каталога товаров.
+// Предоставляет операции чтения, создания, обновления и скрытия товаров,
+// а также подписку на изменение остатков.
+service CatalogService {
+  rpc ListProducts(ListProductsRequest) returns (ListProductsResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/products"
+    };
+  }
+
+  rpc GetProduct(GetProductRequest) returns (GetProductResponse) {
+    option (google.api.http) = {
+      get: "/api/v1/products/{product_id}"
+    };
+  }
+
+  rpc CreateProduct(CreateProductRequest) returns (CreateProductResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/products"
+      body: "*"
+    };
+  }
+
+  rpc UpdateProduct(UpdateProductRequest) returns (UpdateProductResponse) {
+    option (google.api.http) = {
+      patch: "/api/v1/products/{product_id}"
+      body: "*"
+    };
+  }
+
+  rpc HideProduct(HideProductRequest) returns (HideProductResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/products/{product_id}/hide"
+      body: "*"
+    };
+  }
+
+  rpc WatchStock(WatchStockRequest) returns (stream StockEvent) {
+    option (google.api.http) = {
+      get: "/api/v1/products/{product_id}/stock/stream"
+    };
+  }
+}

@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package ecommerce.catalog.v1;
+
+
+// Запрос на подписку на изменение остатка товара.
+// Клиент отправляет один запрос, а сервер в ответ шлёт поток StockEvent
+// каждый раз, когда остаток товара меняется.
+message WatchStockRequest{
+  string product_id = 1; // id существующего товара
+}

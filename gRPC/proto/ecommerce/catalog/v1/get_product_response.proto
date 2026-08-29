@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package ecommerce.catalog.v1;
+
+import "ecommerce/catalog/v1/product.proto";
+
+// Ответ на GetProductRequest.
+// Возвращает полный товар со всеми полями, включая описание.
+// Если товар не найден или скрыт, возвращается gRPC-статус NOT_FOUND,
+// а не поле ошибки внутри ответа.
+message GetProductResponse{
+  Product product = 1;
+}

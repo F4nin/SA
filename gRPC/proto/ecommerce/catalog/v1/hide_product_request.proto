@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package ecommerce.catalog.v1;
+
+// Запрос на скрытие товара (soft delete).
+// Клиент не передаёт целевой статус: сервер сам переводит товар
+// в PRODUCT_STATUS_HIDDEN.
+message HideProductRequest{
+  string product_id = 1;
+  optional string reason = 2;
+}

@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package ecommerce.catalog.v1;
+
+import "ecommerce/common/v1/money.proto";
+
+// Запрос на создание товара.
+// Клиент задаёт только данные товара; id и статус задаёт сервер:
+// id генерируется, статус устанавливается в PRODUCT_STATUS_ACTIVE.
+// idempotency_key обязателен: при повторном запросе с тем же ключом
+// сервер вернёт уже созданный товар, а не создаст дубликат.
+message CreateProductRequest{
+  string name = 1;
+  optional string description = 2;
+  string category_id = 3;
+  ecommerce.common.v1.Money price = 4;
+  int64 stock_quantity = 5;
+  string idempotency_key = 6;
+}

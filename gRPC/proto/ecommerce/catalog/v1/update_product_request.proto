@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package ecommerce.catalog.v1;
+
+import "ecommerce/catalog/v1/product.proto";
+import "google/protobuf/field_mask.proto";
+
+
+// Запрос на частичное обновление товара.
+// Клиент передаёт только изменяемые поля в product и перечисляет их в
+// update_mask. Сервер обновляет исключительно указанные поля, а все
+// остальные оставляет без изменений.
+//
+// Полное обновление (принять целый Product и перезаписать всё) опасно:
+// клиент может не передать часть полей, и они будут стёрты.
+message UpdateProductRequest{
+  string product_id = 1;
+  Product product = 2;
+  google.protobuf.FieldMask update_mask = 3;
+}

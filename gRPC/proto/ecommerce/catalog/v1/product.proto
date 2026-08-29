@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package ecommerce.catalog.v1;
+
+import "ecommerce/common/v1/money.proto";
+import "ecommerce/catalog/v1/product_status.proto";
+
+// Полная сущность товара в каталоге.
+// Используется, когда нужны все данные товара: например, при получении
+// товара по id или после создания/обновления.
+message Product {
+  string id = 1;
+  string name = 2;
+  optional string description = 3;
+  string category_id = 4;
+  ecommerce.common.v1.Money price = 5;
+  int64 stock_quantity = 6;
+  ProductStatus status = 7;
+}

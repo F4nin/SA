@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package ecommerce.catalog.v1;
+
+// Запрос на получение одного товара по его уникальному идентификатору.
+// product_id выдаётся сервером при создании товара.
+message GetProductRequest{
+  string product_id = 1;
+}

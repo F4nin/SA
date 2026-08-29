@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package ecommerce.catalog.v1;
+
+import "ecommerce/catalog/v1/product.proto";
+
+// Ответ на CreateProductRequest.
+// Возвращает созданный товар целиком: со сгенерированным id
+// и установленным статусом, чтобы клиенту не нужен был отдельный GetProduct.
+message CreateProductResponse{
+  Product product = 1;
+}

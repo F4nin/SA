@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package ecommerce.catalog.v1;
+
+import "ecommerce/catalog/v1/product_status.proto";
+
+// Запрос на получение списка товаров с использованием пагинации и фильтрации
+message ListProductsRequest{
+  int32 page_size = 1; // сколько товаров вернуть на одной странице
+  string page_token = 2; // токен следующей страницы; пусто для первой страницы
+  optional string category_id = 3; // фильтр по категории
+  optional ProductStatus status = 4; // фильтр по статусу
+  optional string search_query = 5; // фильтр по названию/описаниию
+}

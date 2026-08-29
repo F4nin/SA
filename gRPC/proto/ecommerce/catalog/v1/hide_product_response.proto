@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package ecommerce.catalog.v1;
+
+import "ecommerce/catalog/v1/product.proto";
+
+// Ответ на HideProductRequest.
+// Возвращает обновлённый товар целиком, чтобы клиент сразу увидел
+// итоговое состояние без дополнительного GetProduct.
+//
+// Ошибки:
+// - товар не найден -> NOT_FOUND;
+// - товар уже скрыт -> FAILED_PRECONDITION.
+message HideProductResponse{
+  Product product = 1;
+}

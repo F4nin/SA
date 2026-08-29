@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package ecommerce.catalog.v1;
+
+import "ecommerce/catalog/v1/product_summary.proto";
+
+// Ответ на запрос ListProductsRequest - возвращает упрощенную версию ProductSummary
+message ListProductsResponse{
+  repeated ProductSummary products = 1; // товары текущей страницы
+  string next_page_token = 2; // токен на следующую страницу; пустой = страниц больше нет
+}

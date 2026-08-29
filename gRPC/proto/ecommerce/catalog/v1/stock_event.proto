@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package ecommerce.catalog.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// Событие изменения остатка товара.
+// В потоке WatchStock передаём только изменённые данные, а не весь Product:
+// это экономит трафик и точнее отражает смысл события.
+message StockEvent {
+  string product_id = 1;
+  int64 old_stock_quantity = 2; // остаток до изменения
+  int64 new_stock_quantity = 3; // остаток после изменения
+  google.protobuf.Timestamp updated_at = 4; // момент изменения
+}
