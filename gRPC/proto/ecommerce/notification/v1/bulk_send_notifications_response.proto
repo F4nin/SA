@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package ecommerce.notification.v1;
+
+import "ecommerce/notification/v1/bulk_send_failure.proto";
+
+// Итоговый ответ BulkSendNotifications.
+// Возвращается один раз после завершения потока.
+// failures содержит только неудачные отправки: список сообщений,
+// а не голых строк, чтобы позже можно было добавить поля без ломающих изменений.
+message BulkSendNotificationsResponse {
+  string batch_id = 1;              // какой рассылке относится итог
+  int32 total_count = 2;            // всего уведомлений в рассылке
+  int32 succeeded_count = 3;        // успешно отправлено
+  repeated BulkSendFailure failures = 4; // только неудачные
+}

@@ -1,7 +1,7 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "ecommerce/order/v1/money.proto",
+    "title": "ecommerce/notification/v1/send_notification_request.proto",
     "version": "version not set"
   },
   "consumes": [

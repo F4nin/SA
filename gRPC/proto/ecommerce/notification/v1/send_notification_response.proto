@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package ecommerce.notification.v1;
+
+import "ecommerce/notification/v1/notification.proto";
+
+// Ответ на SendNotificationRequest.
+// Возвращает созданное уведомление целиком: со сгенерированным id,
+// установленным статусом и временем отправки, чтобы клиенту не нужен был
+// отдельный запрос на чтение.
+message SendNotificationResponse{
+  Notification notification = 1;
+}

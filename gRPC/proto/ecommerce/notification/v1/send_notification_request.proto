@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package ecommerce.notification.v1;
+
+import "ecommerce/notification/v1/delivery_channel.proto";
+import "ecommerce/notification/v1/notification_priority.proto";
+import "google/protobuf/timestamp.proto";
+
+// Запрос на отправку одного уведомления.
+// Клиент задаёт только данные, которые ему подконтрольны.
+// id, status и sent_at заполняет сервер: id генерируется,
+// статус ставится в DELIVERY_STATUS_PENDING, sent_at — в момент фактической отправки.
+message SendNotificationRequest{
+  string user_id = 1;
+  DeliveryChannel channel = 2;
+  optional string template_id = 3;
+  string body = 4;
+  NotificationPriority priority = 5;
+  optional google.protobuf.Timestamp scheduled_at = 6;
+}

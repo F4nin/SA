@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package ecommerce.notification.v1;
+
+// Запрос на подписку на входящие уведомления пользователя.
+// Клиент отправляет один запрос, а сервер в ответ шлёт поток NotificationEvent,
+// пока соединение открыто.
+message SubscribeNotificationsRequest {
+  string user_id = 1; // чьи уведомления слушаем
+}

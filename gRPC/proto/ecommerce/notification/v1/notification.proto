@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package ecommerce.notification.v1;
+
+import "ecommerce/notification/v1/delivery_channel.proto";
+import "ecommerce/notification/v1/notification_priority.proto";
+import "ecommerce/notification/v1/delivery_status.proto";
+import "google/protobuf/timestamp.proto";
+
+// Готовое уведомление для доставки пользователю.
+// user_id — это ссылка на пользователя, а не вложенный User: пользователи
+// управляются отдельным сервисом.
+// channel, priority и status — enum, потому что это закрытые наборы значений.
+// template_id необязателен: уведомление может быть сформировано и без шаблона.
+message Notification{
+  string id = 1;                       // уникальный идентификатор уведомления
+  string user_id = 2;                  // получатель (ссылка на пользователя)
+  DeliveryChannel channel = 3;         // канал доставки
+  optional string template_id = 4;     // шаблон, если уведомление по шаблону
+  string body = 5;                     // готовый текст после подстановки
+  NotificationPriority priority = 6;   // важность уведомления
+  DeliveryStatus status = 7;           // текущий статус доставки
+  optional google.protobuf.Timestamp scheduled_at = 8; // время отложенной отправки
+  optional google.protobuf.Timestamp sent_at = 9;      // время фактической отправки
+
+}

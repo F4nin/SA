@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package ecommerce.notification.v1;
+
+import "ecommerce/notification/v1/send_notification_request.proto";
+import "ecommerce/notification/v1/send_notification_response.proto";
+import "ecommerce/notification/v1/bulk_send_notification_input.proto";
+import "ecommerce/notification/v1/bulk_send_notifications_response.proto";
+import "ecommerce/notification/v1/subscribe_notifications_request.proto";
+import "ecommerce/notification/v1/notification_event.proto";
+import "ecommerce/notification/v1/notification_status_update.proto";
+
+// Сервис уведомлений.
+// Поддерживает четыре типа RPC:
+// - unary: отправка одного уведомления;
+// - client-streaming: массовая рассылка уведомлений;
+// - server-streaming: подписка на входящие уведомления;
+// - bidirectional: двусторонняя синхронизация статусов уведомлений.
+service NotificationService {
+  rpc SendNotification(SendNotificationRequest) returns (SendNotificationResponse);
+  rpc BulkSendNotifications(stream BulkSendNotificationInput) returns (BulkSendNotificationsResponse);
+  rpc SubscribeNotifications(SubscribeNotificationsRequest) returns (stream NotificationEvent);
+  rpc SyncNotificationStatus(stream NotificationStatusUpdate) returns (stream NotificationEvent);
+}

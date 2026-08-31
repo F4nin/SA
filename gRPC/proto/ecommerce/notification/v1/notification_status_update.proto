@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package ecommerce.notification.v1;
+
+import "ecommerce/notification/v1/delivery_status.proto";
+import "google/protobuf/timestamp.proto";
+
+// Сообщение от клиента к серверу в потоке SyncNotificationStatus.
+// Клиент сообщает, что статус уведомления изменился на его стороне,
+// например "прочитано" или "доставлено".
+message NotificationStatusUpdate {
+  string notification_id = 1; // какое уведомление обновляем
+  DeliveryStatus status = 2;  // новый статус на стороне клиента
+  google.protobuf.Timestamp updated_at = 3; // момент действия пользователя
+}

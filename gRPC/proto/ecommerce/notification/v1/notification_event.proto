@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package ecommerce.notification.v1;
+
+import "ecommerce/notification/v1/delivery_channel.proto";
+import "ecommerce/notification/v1/notification_priority.proto";
+import "ecommerce/notification/v1/delivery_status.proto";
+import "google/protobuf/timestamp.proto";
+
+// Событие, которое сервер отправляет подписчику.
+// Содержит ключевые поля уведомления, а не весь Notification:
+// это экономит трафик и точнее отражает смысл события.
+message NotificationEvent {
+  string notification_id = 1; // уведомление, к которому относится событие
+  string user_id = 2;         // получатель (ссылка на пользователя)
+  DeliveryChannel channel = 3;      // канал доставки
+  NotificationPriority priority = 4; // важность уведомления
+  string body = 5;            // готовый текст уведомления
+  DeliveryStatus status = 6;  // текущий статус доставки
+  google.protobuf.Timestamp occurred_at = 7; // момент события (например, смены статуса)
+}

@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package ecommerce.notification.v1;
+
+// Информация о неудачной отправке одного уведомления в массовой рассылке.
+message BulkSendFailure {
+  string user_id = 1; // получатель, которому не удалось доставить
+  string reason = 2;  // причина сбоя
+}

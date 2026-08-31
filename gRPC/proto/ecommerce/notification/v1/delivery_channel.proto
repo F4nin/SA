@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package ecommerce.notification.v1;
+
+// Канал доставки уведомления.
+// Первое значение всегда 0 и означает "не задано" — это значение по умолчанию
+// для любого enum-поля, поэтому оно не может обозначать реальный канал.
+enum DeliveryChannel{
+  DELIVERY_CHANNEL_UNSPECIFIED = 0;
+  DELIVERY_CHANNEL_EMAIL = 1;
+  DELIVERY_CHANNEL_SMS = 2;
+  DELIVERY_CHANNEL_PUSH = 3;
+}

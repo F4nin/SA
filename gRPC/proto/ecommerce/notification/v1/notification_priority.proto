@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package ecommerce.notification.v1;
+
+// Приоритет (важность) уведомления.
+// HIGH — срочное уведомление, LOW — фоновое.
+// Первое значение всегда 0 и означает "не задано" — это значение по умолчанию
+// для любого enum-поля, поэтому оно не может обозначать реальный приоритет.
+enum NotificationPriority{
+  NOTIFICATION_PRIORITY_UNSPECIFIED = 0;
+  NOTIFICATION_PRIORITY_LOW = 1;
+  NOTIFICATION_PRIORITY_NORMAL = 2;
+  NOTIFICATION_PRIORITY_HIGH = 3;
+}

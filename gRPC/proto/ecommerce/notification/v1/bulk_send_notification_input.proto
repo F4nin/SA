@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package ecommerce.notification.v1;
+
+import "ecommerce/notification/v1/delivery_channel.proto";
+import "ecommerce/notification/v1/notification_priority.proto";
+import "google/protobuf/timestamp.proto";
+
+// Один элемент потока BulkSendNotifications.
+// batch_id одинаков для всех элементов одной рассылки: сервер группирует
+// элементы по этому ключу и при повторном запросе пропускает дубли.
+message BulkSendNotificationInput {
+  string batch_id = 1;               // общий ключ рассылки для идемпотентности
+  string user_id = 2;                // получатель (ссылка на пользователя)
+  DeliveryChannel channel = 3;       // канал доставки
+  optional string template_id = 4;   // шаблон, если уведомление по шаблону
+  string body = 5;                   // готовый текст уведомления
+  NotificationPriority priority = 6; // важность уведомления
+  optional google.protobuf.Timestamp scheduled_at = 7; // отложенная отправка
+}
