@@ -1,0 +1,192 @@
+openapi: 3.0.3
+info:
+  title: Polymorphic Attachment API
+  version: 1.0.0
+servers:
+  - url: https://api.example.com/v1
+
+paths:
+  /attachments:
+    get:
+      summary: Список вложений
+      operationId: ListAttachments
+      parameters:
+        - name: filter
+          in: query
+          required: false
+          schema:
+            type: string
+          description: |
+            Строка фильтра, например: `type="image"` для отбора по подтипу.
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+        - name: pageToken
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Список вложений
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  attachments:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Attachment'
+                  nextPageToken:
+                    type: string
+    post:
+      summary: Создать вложение
+      operationId: CreateAttachment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttachmentInput'
+      responses:
+        '201':
+          description: Вложение создано
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attachment'
+        '400':
+          description: Некорректные данные для указанного типа
+        '409':
+          description: Конфликт
+
+  /attachments/{attachmentId}:
+    get:
+      summary: Получить вложение
+      operationId: GetAttachment
+      parameters:
+        - $ref: '#/components/parameters/attachmentId'
+      responses:
+        '200':
+          description: Вложение найдено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attachment'
+        '404':
+          description: Не найдено
+    patch:
+      summary: Частично обновить вложение
+      operationId: UpdateAttachment
+      parameters:
+        - $ref: '#/components/parameters/attachmentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttachmentUpdate'
+      responses:
+        '200':
+          description: Обновлено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attachment'
+    delete:
+      summary: Удалить вложение
+      operationId: DeleteAttachment
+      parameters:
+        - $ref: '#/components/parameters/attachmentId'
+      responses:
+        '204':
+          description: Удалено
+
+components:
+  parameters:
+    attachmentId:
+      name: attachmentId
+      in: path
+      required: true
+      schema:
+        type: string
+
+  schemas:
+    # Входная схема: тип обязателен, а поля для конкретных подтипов опциональны.
+    AttachmentInput:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          description: |
+            Тип вложения. Возможные значения: `image`, `video`, `document`.
+            Это строка, а не enum, чтобы API можно было расширять новыми типами
+            без ломающих изменений.
+          example: image
+        # Поля для image
+        width:
+          type: integer
+          format: int32
+          description: Ширина изображения в пикселях. Применимо только для type=image.
+        height:
+          type: integer
+          format: int32
+          description: Высота изображения в пикселях. Применимо только для type=image.
+        # Поля для video
+        duration:
+          type: string
+          description: Длительность видео в формате ISO 8601, например "PT3M42S". Только для type=video.
+        resolution:
+          type: string
+          description: Разрешение видео, например "1920x1080". Только для type=video.
+        # Поля для document
+        pageCount:
+          type: integer
+          format: int32
+          description: Количество страниц документа. Только для type=document.
+
+    # Схема для частичного обновления: можно менять только метаполя или уточнять подтип.
+    AttachmentUpdate:
+      type: object
+      properties:
+        type:
+          type: string
+          description: Изменение типа вложения. Может менять набор допустимых полей.
+        width:
+          type: integer
+        height:
+          type: integer
+        duration:
+          type: string
+        resolution:
+          type: string
+        pageCount:
+          type: integer
+
+    # Полная схема ресурса: добавляются id и системные поля.
+    Attachment:
+      allOf:
+        - $ref: '#/components/schemas/AttachmentInput'
+        - type: object
+          required: [id, createTime, updateTime]
+          properties:
+            id:
+              type: string
+              readOnly: true
+              example: attachments/123
+            createTime:
+              type: string
+              format: date-time
+              readOnly: true
+            updateTime:
+              type: string
+              format: date-time
+              readOnly: true
+          # Примечание: сервер игнорирует поля, не подходящие для текущего type.
+          # Например, для type=image поле duration игнорируется и возвращается как null или отсутствует.

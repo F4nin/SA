@@ -1,0 +1,710 @@
+openapi: 3.0.3
+info:
+  title: Chat Membership API
+  version: 1.0.0
+  description: |
+    API для управления пользователями, комнатами чата и членством в комнатах.
+    Связь «многие ко многим» моделируется ассоциативным ресурсом `Membership`.
+
+
+servers:
+  - url: https://api.example.com/v1
+
+tags:
+  - name: Users
+    description: Пользователи чата
+  - name: ChatRooms
+    description: Комнаты чата
+  - name: Memberships
+    description: Членство пользователей в комнатах
+
+paths:
+  # ================= USERS =================
+  /users:
+    get:
+      tags: [Users]
+      summary: Список пользователей
+      operationId: ListUsers
+      parameters:
+        - $ref: '#/components/parameters/filter'
+        - $ref: '#/components/parameters/pageSize'
+        - $ref: '#/components/parameters/pageToken'
+      responses:
+        '200':
+          description: Список пользователей
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListUsersResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags: [Users]
+      summary: Создать пользователя
+      operationId: CreateUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserInput'
+      responses:
+        '201':
+          description: Пользователь создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /users/{userId}:
+    get:
+      tags: [Users]
+      summary: Получить пользователя
+      operationId: GetUser
+      parameters:
+        - $ref: '#/components/parameters/userId'
+      responses:
+        '200':
+          description: Пользователь найден
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    patch:
+      tags: [Users]
+      summary: Частично обновить пользователя
+      operationId: UpdateUser
+      parameters:
+        - $ref: '#/components/parameters/userId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdate'
+      responses:
+        '200':
+          description: Пользователь обновлён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags: [Users]
+      summary: Удалить пользователя
+      operationId: DeleteUser
+      parameters:
+        - $ref: '#/components/parameters/userId'
+      responses:
+        '204':
+          description: Пользователь удалён
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ================= CHATROOMS =================
+  /chatRooms:
+    get:
+      tags: [ChatRooms]
+      summary: Список комнат
+      operationId: ListChatRooms
+      parameters:
+        - $ref: '#/components/parameters/filter'
+        - $ref: '#/components/parameters/pageSize'
+        - $ref: '#/components/parameters/pageToken'
+      responses:
+        '200':
+          description: Список комнат
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListChatRoomsResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags: [ChatRooms]
+      summary: Создать комнату
+      operationId: CreateChatRoom
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatRoomInput'
+      responses:
+        '201':
+          description: Комната создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatRoom'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /chatRooms/{chatRoomId}:
+    get:
+      tags: [ChatRooms]
+      summary: Получить комнату
+      operationId: GetChatRoom
+      parameters:
+        - $ref: '#/components/parameters/chatRoomId'
+      responses:
+        '200':
+          description: Комната найдена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatRoom'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    patch:
+      tags: [ChatRooms]
+      summary: Частично обновить комнату
+      operationId: UpdateChatRoom
+      parameters:
+        - $ref: '#/components/parameters/chatRoomId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatRoomUpdate'
+      responses:
+        '200':
+          description: Комната обновлена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatRoom'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags: [ChatRooms]
+      summary: Удалить комнату
+      operationId: DeleteChatRoom
+      parameters:
+        - $ref: '#/components/parameters/chatRoomId'
+      responses:
+        '204':
+          description: Комната удалена
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ================= MEMBERSHIPS =================
+  /memberships:
+    get:
+      tags: [Memberships]
+      summary: Список членств (с фильтрацией)
+      operationId: ListMemberships
+      parameters:
+        - $ref: '#/components/parameters/filter'
+        - $ref: '#/components/parameters/pageSize'
+        - $ref: '#/components/parameters/pageToken'
+      responses:
+        '200':
+          description: Список членств
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListMembershipsResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags: [Memberships]
+      summary: Создать членство (вступить в комнату)
+      operationId: CreateMembership
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MembershipInput'
+      responses:
+        '201':
+          description: Членство создано
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Membership'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /memberships/{membershipId}:
+    get:
+      tags: [Memberships]
+      summary: Получить членство
+      operationId: GetMembership
+      parameters:
+        - $ref: '#/components/parameters/membershipId'
+      responses:
+        '200':
+          description: Членство найдено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Membership'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    patch:
+      tags: [Memberships]
+      summary: Обновить членство (например, роль)
+      operationId: UpdateMembership
+      parameters:
+        - $ref: '#/components/parameters/membershipId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MembershipUpdate'
+      responses:
+        '200':
+          description: Членство обновлено
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Membership'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags: [Memberships]
+      summary: Удалить членство (выйти из комнаты)
+      operationId: DeleteMembership
+      parameters:
+        - $ref: '#/components/parameters/membershipId'
+      responses:
+        '204':
+          description: Членство удалено
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ================= ALIASES =================
+  /users/{userId}/rooms:
+    get:
+      tags: [Users]
+      summary: Список комнат пользователя (алиас)
+      description: Возвращает комнаты, в которых состоит пользователь. Эквивалентно фильтрации по userId в memberships.
+      operationId: ListUserRooms
+      parameters:
+        - $ref: '#/components/parameters/userId'
+        - $ref: '#/components/parameters/pageSize'
+        - $ref: '#/components/parameters/pageToken'
+      responses:
+        '200':
+          description: Список комнат пользователя
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListChatRoomsResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /chatRooms/{chatRoomId}/users:
+    get:
+      tags: [ChatRooms]
+      summary: Список пользователей комнаты (алиас)
+      description: Возвращает пользователей, состоящих в комнате. Эквивалентно фильтрации по roomId в memberships.
+      operationId: ListRoomUsers
+      parameters:
+        - $ref: '#/components/parameters/chatRoomId'
+        - $ref: '#/components/parameters/pageSize'
+        - $ref: '#/components/parameters/pageToken'
+      responses:
+        '200':
+          description: Список пользователей комнаты
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListUsersResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  parameters:
+    userId:
+      name: userId
+      in: path
+      required: true
+      schema:
+        type: string
+    chatRoomId:
+      name: chatRoomId
+      in: path
+      required: true
+      schema:
+        type: string
+    membershipId:
+      name: membershipId
+      in: path
+      required: true
+      schema:
+        type: string
+    filter:
+      name: filter
+      in: query
+      required: false
+      schema:
+        type: string
+      description: |
+        Строка фильтрации. Поддерживается синтаксис фильтров, например:
+        `userId="users/123"` или `roomId="chatRooms/456"`.
+    pageSize:
+      name: pageSize
+      in: query
+      required: false
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        default: 10
+      description: Максимальное число возвращаемых элементов (не точное значение).
+    pageToken:
+      name: pageToken
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Токен пагинации, полученный из предыдущего ответа.
+
+  responses:
+    BadRequest:
+      description: Некорректный запрос
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: Недостаточно прав
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Ресурс не найден
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Conflict:
+      description: Конфликт с текущим состоянием ресурса
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    TooManyRequests:
+      description: Превышен лимит запросов
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    InternalServerError:
+      description: Внутренняя ошибка сервера
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: integer
+          description: Числовой код ошибки (например, 409, 404).
+        message:
+          type: string
+          description: Человекочитаемое описание ошибки.
+        details:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+          description: Дополнительные сведения об ошибке.
+
+    # ---------- USER ----------
+    UserInput:
+      type: object
+      required: [username, displayName]
+      properties:
+        username:
+          type: string
+          description: Уникальное имя пользователя.
+        displayName:
+          type: string
+          description: Отображаемое имя.
+        email:
+          type: string
+          format: email
+          description: Адрес электронной почты.
+        avatarUrl:
+          type: string
+          format: uri
+          description: URL аватара.
+
+    UserUpdate:
+      type: object
+      description: Частичное обновление пользователя. Поля, отсутствующие в теле, не изменяются; null очищает значение.
+      properties:
+        displayName:
+          type: string
+        email:
+          type: string
+          format: email
+        avatarUrl:
+          type: string
+          format: uri
+
+    User:
+      allOf:
+        - $ref: '#/components/schemas/UserInput'
+        - type: object
+          required: [id, createTime, updateTime]
+          properties:
+            id:
+              type: string
+              readOnly: true
+              example: "users/123"
+            createTime:
+              type: string
+              format: date-time
+              readOnly: true
+            updateTime:
+              type: string
+              format: date-time
+              readOnly: true
+
+    ListUsersResponse:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        nextPageToken:
+          type: string
+          description: Токен следующей страницы; пустая строка означает конец списка.
+
+    # ---------- CHATROOM ----------
+    ChatRoomInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          description: Название комнаты.
+        description:
+          type: string
+          description: Описание комнаты.
+        ownerId:
+          type: string
+          description: Ссылка на пользователя-владельца (администратора).
+
+    ChatRoomUpdate:
+      type: object
+      description: Частичное обновление комнаты. Поля, отсутствующие в теле, не изменяются; null очищает значение.
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        ownerId:
+          type: string
+
+    ChatRoom:
+      allOf:
+        - $ref: '#/components/schemas/ChatRoomInput'
+        - type: object
+          required: [id, createdAt, updatedAt]
+          properties:
+            id:
+              type: string
+              readOnly: true
+              example: "chatRooms/456"
+            createdAt:
+              type: string
+              format: date-time
+              readOnly: true
+            updatedAt:
+              type: string
+              format: date-time
+              readOnly: true
+
+    ListChatRoomsResponse:
+      type: object
+      properties:
+        chatRooms:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatRoom'
+        nextPageToken:
+          type: string
+
+    # ---------- MEMBERSHIP ----------
+    MembershipInput:
+      type: object
+      required: [userId, roomId]
+      properties:
+        userId:
+          type: string
+          description: Ссылка на пользователя. Задаётся при создании; после создания не изменяется.
+        roomId:
+          type: string
+          description: Ссылка на комнату. Задаётся при создании; после создания не изменяется.
+        role:
+          type: string
+          description: |
+            Роль пользователя в комнате.
+            Возможные значения: `owner`, `admin`, `member`, `readonly`.
+            По умолчанию `member`.
+
+    MembershipUpdate:
+      type: object
+      description: |
+        Частичное обновление членства. Только поле `role` может быть изменено.
+        Поля `userId`, `roomId`, `joinedAt` доступны только для чтения и игнорируются.
+      properties:
+        role:
+          type: string
+          description: Новая роль пользователя.
+
+    Membership:
+      allOf:
+        - $ref: '#/components/schemas/MembershipInput'
+        - type: object
+          required: [id, joinedAt]
+          properties:
+            id:
+              type: string
+              readOnly: true
+              example: "memberships/789"
+            joinedAt:
+              type: string
+              format: date-time
+              readOnly: true
+              description: Время вступления в комнату, устанавливается сервером.
+
+    ListMembershipsResponse:
+      type: object
+      properties:
+        memberships:
+          type: array
+          items:
+            $ref: '#/components/schemas/Membership'
+        nextPageToken:
+          type: string
