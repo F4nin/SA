@@ -1,0 +1,102 @@
+asyncapi: 3.0.0
+info:
+  title: Order Service AsyncAPI
+  version: 1.0.0
+  description: >
+    Контракт Order Service. Принимает заказ, сохраняет его в БД
+    и публикует событие создания заказа в топик Kafka.
+
+servers:
+  production:
+    host: kafka-1.prod.internal:9092
+    protocol: kafka-secure
+    protocolVersion: '3.7'
+    description: Продуктивный Kafka-кластер
+
+channels:
+  orderCreated:
+    address: orders.created.v1
+    description: Топик событий создания заказа
+    bindings:
+      kafka:
+        partitions: 12
+        replicas: 3
+        minInSyncReplicas: 2
+        retention:
+          ms: 604800000
+
+    messages:
+      orderCreated:
+        $ref: '#/components/messages/OrderCreated'
+
+
+operations:
+  sendOrderCreated:
+    action: send
+    channel:
+      $ref: '#/channels/orderCreated'
+    messages:
+      - $ref: '#/channels/orderCreated/messages/orderCreated'
+
+components:
+  messages:
+    OrderCreated:
+      name: OrderCreated
+      title: Заказ создан
+      summary: Событие успешного создания заказа
+      headers:
+        type: object
+        properties:
+          eventType:
+            type: string
+            description: Тип события, например orders.created
+          eventVersion:
+            type: string
+            description: Версия схемы события, например v1
+          traceId:
+            type: string
+            description: Идентификатор сквозной трассировки (UUID)
+      payload:
+        $ref: '#/components/schemas/OrderCreatedPayload'
+      bindings:
+        kafka:
+          key:
+            type: string
+            description: >
+              Ключ сообщения. Значение: orderId.
+              Используется для сохранения порядка событий одного заказа
+              и направления их в одну партицию.
+  schemas:
+    OrderCreatedPayload:
+      type: object
+      required:
+        - orderId
+        - userId
+        - amount
+        - currency
+        - eventId
+        - occurredAt
+      properties:
+        orderId:
+          type: string
+          description: Уникальный идентификатор заказа
+        userId:
+          type: string
+          description: Уникальный идентификатор пользователя
+        amount:
+          type: string
+          pattern: '^\d+(\.\d{1,2})?$'
+          description: Сумма заказа. Является строкой, в целях корректного вычисления и сериализации
+        currency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+          description: Валюта по ISO 4217, три заглавные буквы
+        eventId:
+          type: string
+          format: uuid
+          description: Уникальный идентификатор события. Используется для дедупликации и идемпотентной обработки
+        occurredAt:
+          type: string
+          format: date-time
+          description: Бизнес-время возникновения события (не время чтения/обработки)
+      additionalProperties: false
