@@ -1,0 +1,284 @@
+asyncapi: 3.0.0
+info:
+  title: Analytics Service AsyncAPI
+  version: 1.0.0
+  description: >
+    Контракт Analytics Service. 
+    Читает три топика orders.created.v1, payments.processed.v1, notifications.sent.v1
+    и строит метрики/витрины, не публикуя события
+
+servers:
+  production:
+    host: kafka-1.prod.internal:9092
+    protocol: kafka-secure
+    protocolVersion: '3.7'
+    description: Продуктивный Kafka-кластер
+
+channels:
+  orderCreated:
+    address: orders.created.v1
+    description: Топик событий создания заказа
+    bindings:
+      kafka:
+        partitions: 12
+        replicas: 3
+        minInSyncReplicas: 2
+        retention:
+          ms: 604800000
+    messages:
+      orderCreated:
+        $ref: '#/components/messages/OrderCreated'
+
+  paymentProcessed:
+    address: payments.processed.v1
+    description:  Топик событий обработки платежа
+    bindings:
+      kafka:
+        partitions: 12
+        replicas: 3
+        minInSyncReplicas: 2
+        retention:
+          ms: 604800000
+    messages:
+      paymentProcessed:
+        $ref: '#/components/messages/PaymentProcessed'
+
+  notificationSent:
+    address: notifications.sent.v1
+    description: Топик событий отправки уведомлений
+    bindings:
+      kafka:
+        partitions: 6
+        replicas: 3
+        minInSyncReplicas: 2
+        retention:
+          ms: 259200000
+    messages:
+      notificationSent:
+        $ref: '#/components/messages/NotificationSent'
+
+operations:
+  receiveOrderCreated:
+    action: receive
+    channel:
+      $ref: '#/channels/orderCreated'
+    messages:
+      - $ref: '#/channels/orderCreated/messages/orderCreated'
+    bindings:
+      kafka:
+        groupId: analytics-service-consumers
+
+  receivePaymentProcessed:
+    action: receive
+    channel:
+      $ref: '#/channels/paymentProcessed'
+    messages:
+      - $ref: '#/channels/paymentProcessed/messages/paymentProcessed'
+    bindings:
+      kafka:
+        groupId: analytics-service-consumers
+
+  receiveNotificationSent:
+    action: receive
+    channel:
+      $ref: '#/channels/notificationSent'
+    messages:
+      - $ref: '#/channels/notificationSent/messages/notificationSent'
+    bindings:
+      kafka:
+        groupId: analytics-service-consumers
+
+components:
+  messages:
+    OrderCreated:
+      name: OrderCreated
+      title: Заказ создан
+      summary: Событие успешного создания заказа
+      headers:
+        type: object
+        properties:
+          eventType:
+            type: string
+            description: Тип события, например orders.created
+          eventVersion:
+            type: string
+            description: Версия схемы события, например v1
+          traceId:
+            type: string
+            description: Идентификатор сквозной трассировки (UUID)
+      payload:
+        $ref: '#/components/schemas/OrderCreatedPayload'
+      bindings:
+        kafka:
+          key:
+            type: string
+            description: >
+              Ключ сообщения. Значение: orderId.
+              Используется для сохранения порядка событий одного заказа
+              и направления их в одну партицию.
+
+    PaymentProcessed:
+      name: PaymentProcessed
+      title: Платёж обработан
+      summary: Событие успешной обработки платежа
+      headers:
+        type: object
+        properties:
+          eventType:
+            type: string
+            description: Тип события, например payments.processed
+          eventVersion:
+            type: string
+            description: Версия схемы события, например v1
+          traceId:
+            type: string
+            description: Идентификатор сквозной трассировки (UUID)
+      payload:
+        $ref: '#/components/schemas/PaymentProcessedPayload'
+      bindings:
+        kafka:
+          key:
+            type: string
+            description: >
+              Ключ сообщения. Значение: orderId.
+              Используется для сохранения порядка событий одного заказа
+              и направления их в одну партицию.
+
+    NotificationSent:
+      name: NotificationSent
+      title: Уведомление отправлено
+      summary: Событие успешной отправки уведомления пользователю
+      headers:
+        type: object
+        properties:
+          eventType:
+            type: string
+            description: Тип события, например notifications.sent
+          eventVersion:
+            type: string
+            description: Версия схемы события, например v1
+          traceId:
+            type: string
+            description: Идентификатор сквозной трассировки (UUID)
+      payload:
+        $ref: '#/components/schemas/NotificationSentPayload'
+      bindings:
+        kafka:
+          key:
+            type: string
+            description: >
+              Ключ сообщения. Значение: userId.
+              Используется для сохранения порядка уведомлений одного пользователя
+              и направления их в одну партицию.
+              
+  schemas:
+    OrderCreatedPayload:
+      type: object
+      required:
+        - orderId
+        - userId
+        - amount
+        - currency
+        - eventId
+        - occurredAt
+      properties:
+        orderId:
+          type: string
+          description: Уникальный идентификатор заказа
+        userId:
+          type: string
+          description: Уникальный идентификатор пользователя
+        amount:
+          type: string
+          pattern: '^\d+(\.\d{1,2})?$'
+          description: Сумма заказа. Является строкой, в целях корректного вычисления и сериализации
+        currency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+          description: Валюта по ISO 4217, три заглавные буквы
+        eventId:
+          type: string
+          format: uuid
+          description: Уникальный идентификатор события. Используется для дедупликации и идемпотентной обработки
+        occurredAt:
+          type: string
+          format: date-time
+          description: Бизнес-время возникновения события (не время чтения/обработки)
+      additionalProperties: false
+
+    PaymentProcessedPayload:
+      type: object
+      required:
+        - orderId
+        - userId
+        - paymentId
+        - paymentStatus
+        - amount
+        - currency
+        - eventId
+        - occurredAt
+      properties:
+        orderId:
+          type: string
+          description: Уникальный идентификатор заказа
+        userId:
+          type: string
+          description: Уникальный идентификатор пользователя
+        paymentId:
+          type: string
+          description: Уникальный идентификатор операции оплаты
+        paymentStatus:
+          type: string
+          enum:
+            - SUCCESS
+          description: Статус платежа. В текущей версии всегда SUCCESS
+        amount:
+          type: string
+          pattern: '^\d+(\.\d{1,2})?$'
+          description: Сумма платежа. Строка для корректных вычислений и сериализации
+        currency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+          description: Валюта по ISO 4217, три заглавные буквы
+        eventId:
+          type: string
+          format: uuid
+          description: Уникальный идентификатор события. Используется для дедупликации и идемпотентной обработки
+        occurredAt:
+          type: string
+          format: date-time
+          description: Бизнес-время события — момент успешной обработки платежа
+      additionalProperties: false
+
+    NotificationSentPayload:
+      type: object
+      required:
+        - userId
+        - orderId
+        - deliveryMethod
+        - eventId
+        - occurredAt
+      properties:
+        userId:
+          type: string
+          description: Уникальный идентификатор пользователя
+        orderId:
+          type: string
+          description: Уникальный идентификатор заказа
+        deliveryMethod:
+          type: string
+          enum:
+            - EMAIL
+            - SMS
+            - PUSH
+          description:
+            Способ доставки уведомления. Допустимые значения - EMAIL, SMS, PUSH
+        eventId:
+          type: string
+          format: uuid
+          description: Уникальный идентификатор события. Используется для дедупликации и идемпотентной обработки
+        occurredAt:
+          type: string
+          format: date-time
+          description: Бизнес-время события — момент отправки уведомления
+      additionalProperties: false

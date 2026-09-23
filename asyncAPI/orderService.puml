@@ -1,0 +1,16 @@
+@startuml
+title Order Service — Transactional Outbox и публикация события
+
+participant "Order Service" as orderSvc
+database "PostgreSQL" as db
+participant "Kafka" as kafka
+autonumber
+group Одна БД-транзакция
+  orderSvc -> db : INSERT INTO orders
+  db --> orderSvc : OK
+  orderSvc -> db : INSERT INTO outbox
+  db --> orderSvc : OK
+end
+orderSvc ->> kafka : публикация события orders.created.v1 с ключом orderId\npublish orders.created.v1 (key=orderId)
+
+@enduml

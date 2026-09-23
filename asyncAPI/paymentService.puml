@@ -1,0 +1,27 @@
+@startuml
+title Payment Service — обработка платежа (exactly-once)
+
+participant "Kafka" as kafka
+participant "Payment Service" as paySvc
+database "PostgreSQL" as db
+
+autonumber
+kafka ->> paySvc : orders.created.v1 (key=orderId, eventId=...)
+
+alt событие ещё не обработано
+  paySvc -> db : INSERT eventId в processed_events (UNIQUE)
+  db --> paySvc : OK
+
+  paySvc ->> kafka : publish payments.processed.v1 (key=orderId)
+
+  note right
+    В одной Kafka-транзакции:
+    1) публикуется payments.processed.v1
+    2) коммитится offset входного сообщения orders.created.v1
+  end note
+
+else eventId уже есть
+  paySvc -> paySvc : пропустить событие
+end
+
+@enduml

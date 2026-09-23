@@ -1,0 +1,29 @@
+@startuml
+title Notification Service — at-least-once и идемпотентная отправка уведомления
+
+participant "Kafka" as kafka
+participant "Notification Service" as notifSvc
+database "PostgreSQL" as db
+autonumber
+kafka ->> notifSvc : payments.processed.v1 (key=orderId, eventId=...)
+
+alt новый eventId (уведомление ещё не отправлялось)
+  notifSvc -> db : INSERT eventId в processed_events (UNIQUE)
+  db --> notifSvc : OK
+
+  notifSvc -> notifSvc : отправить уведомление (email/sms/push)
+  notifSvc ->> kafka : publish notifications.sent.v1 (key=userId)
+
+  note right
+    Офсет входного события payments.processed.v1
+    коммитится вручную ПОСЛЕ успешной отправки уведомления.
+    При сбое до коммита событие будет перечитано,
+    но dedup по eventId не позволит отправить уведомление повторно.
+    Это at-least-once с идемпотентным потребителем.
+  end note
+
+else eventId уже обработан
+  notifSvc -> notifSvc : пропустить событие (дубликат)
+end
+
+@enduml

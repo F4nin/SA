@@ -1,0 +1,40 @@
+@startuml
+title Analytics Service — параллельное чтение событий и построение метрик
+
+participant "Kafka" as kafka
+participant "Analytics Service" as analyticsSvc
+autonumber
+
+kafka ->> analyticsSvc : orders.created.v1
+note right
+  Публикация/чтение из общего топика.
+  Аналитика — один из многих потребителей.
+  Используется паттерн pub/sub:
+  один и тот же топик читают
+  Payment Service и Analytics Service независимо.
+end note
+
+kafka ->> analyticsSvc : payments.processed.v1
+note right
+  Чтение платежей для аналитики.
+  Analytics Service имеет собственную consumer group,
+  поэтому его офсеты и темп не влияют
+  на Notification Service.
+end note
+
+kafka ->> analyticsSvc : notifications.sent.v1
+note right
+  Чтение событий уведомлений.
+  Внутри группы возможен параллелизм:
+  количество партиций определяет
+  максимальное число параллельных инстансов аналитики.
+end note
+
+note over analyticsSvc
+  Паттерн идемпотентной аналитики:
+  события могут дублироваться при at-least-once,
+  поэтому метрики строятся по уникальному eventId,
+  чтобы не задваивать подсчёты.
+end note
+
+@enduml
